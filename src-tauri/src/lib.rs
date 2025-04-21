@@ -1,10 +1,10 @@
-pub mod audio;
-use audio::test::audio_test;
-
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+
+pub mod audio_lib;
+
 #[tauri::command]
 fn tests() {
-    audio_test();
+    todo!();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
