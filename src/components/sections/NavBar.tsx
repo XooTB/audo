@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router";
+import ImportBtn from "../atoms/ImportBtn";
 
 export default function NavBar() {
 	const location = useLocation();
@@ -47,6 +48,7 @@ export default function NavBar() {
 						</Link>
 					</div>
 				</div>
+				<ImportBtn /> 
 			</div>
 		</nav>
 	);

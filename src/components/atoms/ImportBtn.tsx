@@ -1,5 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { Plus } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 
 type Props = {}
 
@@ -11,6 +12,10 @@ const ImportBtn = ({ }: Props) => {
     })
 
     console.log(file);
+
+    if (file) {
+      invoke("import_to_library", { filePath: file });
+    }
   }
 
   return (
