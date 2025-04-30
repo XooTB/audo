@@ -1,16 +1,41 @@
+use core::fmt;
 use ffmpeg_next as ffmpeg;
 
-pub fn get_chapters(context: &ffmpeg::format::context::Input) {
+#[derive(Debug)]
+pub struct BookChapter {
+    id: i64,
+    title: String,
+    start: i64,
+    end: i64,
+}
+
+impl std::fmt::Display for BookChapter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "id: {}, title: {}, start: {}, end: {}",
+            self.id, self.title, self.start, self.end
+        )
+    }
+}
+
+pub fn get_chapters(context: &ffmpeg::format::context::Input) -> Vec<BookChapter> {
+    let mut chapters: Vec<BookChapter> = vec![];
+
     for chapter in context.chapters() {
         let id = chapter.id();
         let metadata = chapter.metadata();
-        let title = metadata.get("title").unwrap_or("Untitled");
+        let title = metadata.get("title").unwrap_or("Untitled").to_owned();
         let start = chapter.start();
         let end = chapter.end();
 
-        println!(
-            "ID: {}, Title: {}, start: {}, end: {}",
-            id, title, start, end
-        );
+        chapters.push(BookChapter {
+            id,
+            title,
+            start,
+            end,
+        });
     }
+
+    return chapters;
 }
