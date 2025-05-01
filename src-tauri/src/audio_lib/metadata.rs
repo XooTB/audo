@@ -2,11 +2,11 @@ use ffmpeg_next as ffmpeg;
 
 #[derive(Debug)]
 pub struct BookMetadata {
-    title: String,
-    author: String,
-    narrator: String,
-    series: String,
-    description: String,
+    pub title: String,
+    pub author: String,
+    pub narrator: String,
+    pub series: String,
+    pub description: String,
 }
 
 pub fn extract_metadata(context: &ffmpeg::format::context::Input) -> BookMetadata {

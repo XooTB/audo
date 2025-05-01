@@ -1,4 +1,5 @@
 pub mod db;
+pub mod entity;
 pub mod init;
 pub mod run_migrations;
 

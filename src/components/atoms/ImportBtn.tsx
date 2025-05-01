@@ -14,7 +14,7 @@ const ImportBtn = ({ }: Props) => {
     console.log(file);
 
     if (file) {
-      invoke("import_to_library", { filePath: file });
+      invoke("import_book", { filePath: file });
     }
   }
 

@@ -14,7 +14,7 @@ pub async fn establish_connection() -> Arc<DbConn> {
     // Database file path
     let db_path = app_data_dir.join("database.sqlite");
     let db_url = format!("sqlite://{}?mode=rwc", db_path.display());
-    // println!("Databse URL: {db_url}");
+    println!("Databse URL: {db_url}");
 
     // Connect to the database
     let db_connection = Database::connect(&db_url)

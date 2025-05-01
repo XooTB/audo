@@ -17,6 +17,9 @@ target
 # sqlite database file
 database.sqlite
 
+# Env files
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
