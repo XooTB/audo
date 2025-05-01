@@ -15,15 +15,12 @@ pub async fn import_book(file_path: &str, db: tauri::State<'_, Db>) -> Result<()
     let chapters = chapters::get_chapters(&context);
     let conn = &*db.inner().0;
 
-    println!("Metadata: {:?}", book_metadata);
-    for i in 0..10 {
-        println!("Chapter Info: {}", chapters[i])
-    }
+    let stringified_chapters = serde_json::to_string(&chapters).unwrap();
 
     let new_book = audiobook::ActiveModel {
         title: Set(book_metadata.title.to_owned()),
         author: Set(book_metadata.author.to_owned()),
-        chapters: Set("".to_string()),
+        chapters: Set(stringified_chapters),
         ..Default::default()
     };
 

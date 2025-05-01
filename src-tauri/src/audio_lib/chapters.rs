@@ -1,7 +1,8 @@
 use core::fmt;
 use ffmpeg_next as ffmpeg;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BookChapter {
     id: i64,
     title: String,
