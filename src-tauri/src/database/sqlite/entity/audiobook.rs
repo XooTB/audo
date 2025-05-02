@@ -10,6 +10,9 @@ pub struct Model {
     pub title: String,
     pub author: String,
     pub chapters: String,
+    pub narrator: String,
+    pub series: String,
+    pub description: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
