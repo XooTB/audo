@@ -1,6 +1,6 @@
+pub mod controllers;
 pub mod db;
 pub mod entity;
-pub mod init;
 pub mod run_migrations;
 
 use sea_orm::DbConn;
