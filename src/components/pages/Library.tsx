@@ -1,21 +1,22 @@
 import React from 'react';
-import bookLib from '../../temp/constants/lib';
 import BookCard from '../atoms/BookCard';
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
-import Book from "../../types/book.d"
+import { LibBook } from "../../types/book.d"
 
 const Library: React.FC = () => {
-  const [books, setBooks] = useState<Book[] | null>(null);
+  const [books, setBooks] = useState<LibBook[] | null>(null);
 
   useEffect(() => {
     fetchLibrary()
   }, [])
 
   const fetchLibrary = async () => {
-    let res: Book[] = await invoke("get_library");
+    let res: LibBook[] = await invoke("get_library");
     setBooks(res);
   }
+
+  console.log(books)
 
   return (
     <div className="p-4">
@@ -25,6 +26,9 @@ const Library: React.FC = () => {
         {books?.map((book, index) => (
           <BookCard book={book} key={index} />
         ))}
+        {books?.length === 0 && (
+          <p className="text-xs w-full">Your library is empty!</p>
+        )}
       </div>
     </div>
   );
