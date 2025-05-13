@@ -3,3 +3,4 @@
 pub mod prelude;
 
 pub mod audiobook;
+pub mod current_book;
