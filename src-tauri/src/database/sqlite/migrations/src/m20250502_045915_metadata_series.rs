@@ -6,11 +6,6 @@ pub struct Migration;
 #[derive(DeriveIden)]
 enum Audiobook {
     Table,
-    Id,
-    Title,
-    Author,
-    Chapters,
-    Narrator,
     Series,
 }
 

@@ -1,4 +1,4 @@
-use ffmpeg_next::{self as ffmpeg, format::Input};
+use ffmpeg_next::{self as ffmpeg};
 
 pub fn init(file_path: &str) -> Result<ffmpeg::format::context::Input, ffmpeg::Error> {
     ffmpeg::init().expect("Something went wrong while initializing ffmpeg!");
