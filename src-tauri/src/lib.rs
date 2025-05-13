@@ -8,18 +8,30 @@ use crate::database::sqlite::Db;
 use book_managers::import_book::import_book;
 use database::sqlite::controllers::get_library::get_library;
 use database::sqlite::db;
+use tauri::AppHandle;
+use tauri::Manager;
 
-pub async fn initialize_database() -> Db {
-    let db_conn = db::establish_connection().await;
+pub async fn initialize_database(app_handle: &AppHandle) -> Db {
+    let db_conn = db::establish_connection(app_handle).await;
     Db(db_conn)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub async fn run() {
-    let db = initialize_database().await;
-
+pub fn run() {
     tauri::Builder::default()
-        .manage(db) // Injects shared DB state
+        .setup(|app| {
+            let app_handle = app.handle();
+
+            // Initialize the database,
+            tauri::async_runtime::block_on(async move {
+                let db = initialize_database(app_handle).await;
+                app_handle.manage(db);
+            });
+
+            Ok(())
+        })
+        .plugin(tauri_plugin_fs::init())
+        // .manage(db) // Injects shared DB state
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![import_book, get_library])
