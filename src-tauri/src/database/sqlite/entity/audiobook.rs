@@ -13,6 +13,7 @@ pub struct Model {
     pub narrator: String,
     pub series: String,
     pub description: String,
+    pub location: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

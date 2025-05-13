@@ -36,6 +36,7 @@ pub async fn import_book(file_path: &str, db: tauri::State<'_, Db>) -> Result<()
                     narrator: Set(book_metadata.narrator.to_owned()),
                     series: Set(book_metadata.series.to_owned()),
                     description: Set(book_metadata.description.to_owned()),
+                    location: Set(file_path.to_owned()),
                     ..Default::default()
                 };
 
