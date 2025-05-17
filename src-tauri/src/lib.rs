@@ -6,6 +6,7 @@ pub mod database;
 // Imports
 use crate::database::sqlite::Db;
 use book_managers::import_book::import_book;
+use database::sqlite::controllers::books::current::set;
 use database::sqlite::controllers::get_library::get_library;
 use database::sqlite::db;
 use tauri::AppHandle;
@@ -34,7 +35,7 @@ pub fn run() {
         // .manage(db) // Injects shared DB state
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![import_book, get_library])
+        .invoke_handler(tauri::generate_handler![import_book, get_library, set])
         .run(tauri::generate_context!())
         .expect("error while running Tauri app");
 }

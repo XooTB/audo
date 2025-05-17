@@ -15,6 +15,7 @@ export interface LibBook {
   narrator: string;
   series: string;
   author: string;
+  description: string;
 }
 
 
