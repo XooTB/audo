@@ -6,6 +6,7 @@ mod m20250502_045727_metadata_narrator;
 mod m20250502_045915_metadata_series;
 mod m20250502_050036_metadata_description;
 mod m20250513_180706_file_location;
+mod m20250603_180122_progress_table;
 
 pub struct Migrator;
 
@@ -19,6 +20,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250502_045915_metadata_series::Migration),
             Box::new(m20250502_050036_metadata_description::Migration),
             Box::new(m20250513_180706_file_location::Migration),
+            Box::new(m20250603_180122_progress_table::Migration),
         ]
     }
 }

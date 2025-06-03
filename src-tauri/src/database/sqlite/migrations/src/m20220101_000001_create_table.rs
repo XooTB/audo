@@ -4,7 +4,7 @@ use sea_orm_migration::{prelude::*, schema::*};
 pub struct Migration;
 
 #[derive(DeriveIden)]
-enum Audiobook {
+pub enum Audiobook {
     Table,
     Id,
     Title,
