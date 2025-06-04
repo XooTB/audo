@@ -1,7 +1,6 @@
 use crate::audio_lib::chapters;
 use crate::audio_lib::init;
 use crate::audio_lib::metadata;
-
 use crate::database::sqlite::entity::audiobook;
 use crate::database::sqlite::entity::audiobook::Entity as AudioBook;
 use crate::database::sqlite::Db;

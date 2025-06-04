@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BookChapter {
-    id: i64,
+    pub id: i32,
     title: String,
     start: i64,
     end: i64,
@@ -31,7 +31,7 @@ pub fn get_chapters(context: &ffmpeg::format::context::Input) -> Vec<BookChapter
         let end = chapter.end();
 
         chapters.push(BookChapter {
-            id,
+            id: id.try_into().unwrap(),
             title,
             start,
             end,

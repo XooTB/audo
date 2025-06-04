@@ -1,4 +1,3 @@
-import { MouseEvent } from "react";
 import type { LibBook } from "../../types/book.d.ts";
 import { ArrowRight } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
@@ -9,8 +8,9 @@ interface BookCardProps {
 
 const BookCard = ({ book }: BookCardProps) => {
   const handleClick = () => {
-    invoke("set", { bookId: book.id })
+    invoke("start", { bookId: book.id })
   }
+
   return (
     <div className="flex flex-col w-full relative rounded-sm group">
       <div className="transition-opacity duration-300 ease-in-out group-hover:opacity-50">
