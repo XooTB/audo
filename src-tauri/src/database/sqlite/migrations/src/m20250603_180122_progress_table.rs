@@ -29,7 +29,11 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Progress::CurrentChapter).string().not_null())
+                    .col(
+                        ColumnDef::new(Progress::CurrentChapter)
+                            .integer()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(Progress::ChapterProgress)
                             .integer()

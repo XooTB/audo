@@ -7,7 +7,7 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub book_id: i32,
-    pub current_chapter: String,
+    pub current_chapter: i32,
     pub chapter_progress: i32,
     pub book_progress: i32,
     pub currently_reading: bool,
