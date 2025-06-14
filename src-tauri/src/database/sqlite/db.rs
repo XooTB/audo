@@ -1,17 +1,17 @@
 use crate::database::sqlite::run_migrations;
 use sea_orm::{Database, DbConn};
-use std::{env, path::PathBuf, sync::Arc};
+use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
-fn get_db_path(app_handle: &AppHandle) -> PathBuf {
-    let app_dir = app_handle
-        .path()
-        .app_data_dir()
-        .expect("app data dir not found!");
-    println!("{:?}", app_dir.to_str());
-    let dir = env::current_dir().expect("Failed to get the current dir!");
-    dir
-}
+// fn get_db_path(app_handle: &AppHandle) -> PathBuf {
+//     let app_dir = app_handle
+//         .path()
+//         .app_data_dir()
+//         .expect("app data dir not found!");
+//     println!("{:?}", app_dir.to_str());
+//     let dir = env::current_dir().expect("Failed to get the current dir!");
+//     dir
+// }
 
 pub async fn establish_connection(app_handle: &AppHandle) -> Arc<DbConn> {
     // Get the app data directory for storing the database
