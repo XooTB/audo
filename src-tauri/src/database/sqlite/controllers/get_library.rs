@@ -1,7 +1,9 @@
 use crate::database::sqlite::entity::audiobook;
 use crate::database::sqlite::entity::audiobook::Entity as AudioBook;
+use crate::database::sqlite::entity::progress;
 use crate::database::sqlite::Db;
-use sea_orm::{EntityTrait, FromQueryResult, QuerySelect};
+use sea_orm::RelationTrait;
+use sea_orm::{EntityTrait, FromQueryResult, JoinType, QuerySelect};
 use serde::{Deserialize, Serialize};
 
 // AudioBook Response struct
@@ -13,20 +15,7 @@ pub struct AudioBookResponse {
     pub narrator: String,
     pub series: String,
     pub description: String,
-}
-
-// Audiobook Response Implementation
-impl From<audiobook::Model> for AudioBookResponse {
-    fn from(book: audiobook::Model) -> Self {
-        Self {
-            id: book.id,
-            title: book.title,
-            author: book.author,
-            narrator: book.narrator,
-            series: book.series,
-            description: book.description,
-        }
-    }
+    pub status: Option<String>,
 }
 
 // get_library function
@@ -43,6 +32,8 @@ pub async fn get_library(db: tauri::State<'_, Db>) -> Result<Vec<AudioBookRespon
             audiobook::Column::Narrator,
             audiobook::Column::Description,
         ])
+        .column_as(progress::Column::Status, "status")
+        .join(JoinType::LeftJoin, audiobook::Relation::Progress.def())
         .into_model::<AudioBookResponse>()
         .all(conn)
         .await;
