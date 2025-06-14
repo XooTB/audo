@@ -9,6 +9,11 @@ pub enum Audiobook {
     Id,
     Title,
     Author,
+    Series,
+    Chapters,
+    Narrator,
+    Description,
+    Location,
 }
 
 #[async_trait::async_trait]
@@ -22,6 +27,11 @@ impl MigrationTrait for Migration {
                     .col(pk_auto(Audiobook::Id))
                     .col(string(Audiobook::Title))
                     .col(string(Audiobook::Author))
+                    .col(string(Audiobook::Series))
+                    .col(string(Audiobook::Chapters))
+                    .col(string(Audiobook::Narrator))
+                    .col(string(Audiobook::Description))
+                    .col(string(Audiobook::Location))
                     .to_owned(),
             )
             .await
