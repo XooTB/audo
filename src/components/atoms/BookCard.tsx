@@ -24,9 +24,11 @@ const BookCard = ({ book }: BookCardProps) => {
         <p className="text-sm overflow-y-auto max-h-36 mb-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 delay-75">
           {book.description || "No description available."}
         </p>
-        <button onClick={handleClick} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 delay-150 hover:scale-105 flex items-center justify-center w-full hover:cursor-pointer">
-          <span className="flex items-center justify-center text-sm gap-1">Start Reading <ArrowRight size={20} /> </span>
-        </button>
+        {book.status != "reading" && (
+          <button onClick={handleClick} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 delay-150 hover:scale-105 flex items-center justify-center w-full hover:cursor-pointer">
+            <span className="flex items-center justify-center text-sm gap-1">Start Reading <ArrowRight size={20} /> </span>
+          </button>
+        )}
       </div>
     </div>
   );

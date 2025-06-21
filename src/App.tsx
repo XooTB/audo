@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import "./App.css";
+import "./styles/globals.css";
 import NavBar from "./components/sections/NavBar";
 import Library from "./components/pages/Library";
 import CurrentlyListening from "./components/pages/CurrentlyListening";
