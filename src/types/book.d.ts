@@ -16,6 +16,7 @@ export interface LibBook {
   series: string;
   author: string;
   description: string;
+  status: "completed" | "reading" | "paused" | "dropped" | "new";
 }
 
 
