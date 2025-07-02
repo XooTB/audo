@@ -57,7 +57,7 @@ const BookCard = ({ book }: BookCardProps) => {
                   onClick={handleClick}
                   variant="default"
                   size="sm"
-                  className="w-full mt-2 hover:cursor-pointer"
+                  className="w-full mt-2 hover:cursor-pointer hover:bg-gray-200 hover:text-black"
                 >
                   {getButtonText()}
                 </Button>
@@ -66,7 +66,6 @@ const BookCard = ({ book }: BookCardProps) => {
           </div>
         </div>
       </CardHeader>
-
       {/* Title Section - Small bottom area */}
       <CardContent className="justify-start p-2">
         <h3 className="font-medium text-base line-clamp-2 leading-tight">
