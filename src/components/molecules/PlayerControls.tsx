@@ -8,10 +8,29 @@ const PlayerControls = () => {
   const [length] = useState<number>(600);
   const [current, setCurrent] = useState<number>(0);
   const intervalRef = useRef<number | null>(null);
+  const [, setPlaybackState] = useState<any>(null);
 
   const handlePlayerSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCurrent(parseInt(e.target.value));
   };
+
+  // Fetch playback state periodically
+  useEffect(() => {
+    const fetchPlaybackState = async () => {
+      try {
+        const state = await invoke("get_playback_state");
+        setPlaybackState(state);
+        setPaused(!(state as any)?.is_playing);
+      } catch (error) {
+        console.error("Error fetching playback state:", error);
+      }
+    };
+
+    fetchPlaybackState();
+    const stateInterval = setInterval(fetchPlaybackState, 1000);
+
+    return () => clearInterval(stateInterval);
+  }, []);
 
   useEffect(() => {
     if (!paused) {
@@ -33,9 +52,19 @@ const PlayerControls = () => {
   }, [paused]);
 
   const togglePlayPause = async () => {
-    const x = await invoke("tests")
-    console.log(x)
-    setPaused((prev) => !prev);
+    try {
+      if (paused) {
+        await invoke("play");
+        setPaused(false);
+        console.log("Started playback");
+      } else {
+        await invoke("pause");
+        setPaused(true);
+        console.log("Paused playback");
+      }
+    } catch (error) {
+      console.error("Error toggling playback:", error);
+    }
   };
 
   return (

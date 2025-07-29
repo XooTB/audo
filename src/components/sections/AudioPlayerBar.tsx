@@ -16,7 +16,7 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
   const [volume, setVolume] = useState<number>(80);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const intervalRef = useRef<number | null>(null);
-  const [playbackState, setPlaybackState] = useState<any>(null);
+  const [, setPlaybackState] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handlePlayerSeek = (value: number[]) => {
@@ -33,7 +33,7 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
       try {
         const state = await invoke("get_playback_state");
         setPlaybackState(state);
-        setPaused(!state?.is_playing);
+        setPaused(!(state as any)?.is_playing);
       } catch (error) {
         console.error("Error fetching playback state:", error);
       }
