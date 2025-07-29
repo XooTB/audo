@@ -4,6 +4,7 @@ pub mod book_managers;
 pub mod database;
 
 // Imports
+use crate::audio_lib::controls::play::play;
 use crate::database::sqlite::Db;
 use book_managers::import_book::import_book;
 use book_managers::progress::start::start;
@@ -40,7 +41,8 @@ pub fn run() {
             import_book,
             get_library,
             set,
-            start
+            start,
+            play
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri app");
