@@ -16,6 +16,8 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
   const [volume, setVolume] = useState<number>(80);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
   const intervalRef = useRef<number | null>(null);
+  const [playbackState, setPlaybackState] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handlePlayerSeek = (value: number[]) => {
     setCurrent(value[0]);
@@ -24,6 +26,24 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
   const handleVolumeChange = (value: number[]) => {
     setVolume(value[0]);
   };
+
+  // Fetch playback state periodically
+  useEffect(() => {
+    const fetchPlaybackState = async () => {
+      try {
+        const state = await invoke("get_playback_state");
+        setPlaybackState(state);
+        setPaused(!state?.is_playing);
+      } catch (error) {
+        console.error("Error fetching playback state:", error);
+      }
+    };
+
+    fetchPlaybackState();
+    const stateInterval = setInterval(fetchPlaybackState, 1000);
+
+    return () => clearInterval(stateInterval);
+  }, []);
 
   useEffect(() => {
     if (!paused) {
@@ -46,12 +66,25 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
 
   const togglePlayPause = async () => {
     try {
-      const x = await invoke("tests");
-      console.log(x);
+      setIsLoading(true);
+      if (paused) {
+        // If currently paused, try to play
+        await invoke("play");
+        setPaused(false);
+        console.log("Started playback");
+      } else {
+        // If currently playing, pause
+        await invoke("pause");
+        setPaused(true);
+        console.log("Paused playback");
+      }
     } catch (error) {
-      console.error("Error calling tests:", error);
+      console.error("Error toggling playback:", error);
+      // Revert state on error
+      setPaused((prev) => prev);
+    } finally {
+      setIsLoading(false);
     }
-    setPaused((prev) => !prev);
   };
 
   return (
@@ -105,8 +138,11 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
               onClick={togglePlayPause}
               size="sm"
               className="h-10 w-10 rounded-full"
+              disabled={isLoading}
             >
-              {paused ? (
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : paused ? (
                 <Play className="h-4 w-4 ml-0.5" />
               ) : (
                 <Pause className="h-4 w-4" />
