@@ -30,11 +30,31 @@ pub fn get_chapters(context: &ffmpeg::format::context::Input) -> Vec<BookChapter
         let start = chapter.start();
         let end = chapter.end();
 
+        // Handle potential conversion error safely
+        match id.try_into() {
+            Ok(chapter_id) => {
+                chapters.push(BookChapter {
+                    id: chapter_id,
+                    title,
+                    start,
+                    end,
+                });
+            }
+            Err(e) => {
+                eprintln!("Warning: Failed to convert chapter ID {} to i32, skipping chapter: {}", id, e);
+                continue;
+            }
+        }
+    }
+
+    // If no chapters were found or parsed successfully, create a default chapter
+    if chapters.is_empty() {
+        println!("No chapters found in audio file, creating default chapter");
         chapters.push(BookChapter {
-            id: id.try_into().unwrap(),
-            title,
-            start,
-            end,
+            id: 1,
+            title: "Chapter 1".to_string(),
+            start: 0,
+            end: context.duration() as i64, // Use the file's total duration
         });
     }
 

@@ -10,27 +10,61 @@ use sea_orm::Set;
 #[tauri::command]
 pub async fn start(book_id: i32, db: tauri::State<'_, Db>) -> Result<(), String> {
     let conn = &*db.inner().0;
+    
+    println!("Starting book with ID: {}", book_id);
+    
+    // Validate book_id
+    if book_id <= 0 {
+        return Err("Invalid book ID: must be a positive integer".to_string());
+    }
 
-    // Check if the book is already in the progress table.
-    let res = Progress::find_by_id(book_id).one(conn).await;
+    // Check if the book is already in the progress table
+    let existing_progress = Progress::find_by_id(book_id).one(conn).await;
 
-    match res {
-        Ok(Some(_book)) => {
-            // If the book was found
-            return Ok(());
+    match existing_progress {
+        Ok(Some(existing)) => {
+            println!("Book already started, current status: {}", existing.status);
+            
+            // Update the currently_reading flag if it's not already set
+            if !existing.currently_reading {
+                let mut active_progress: progress::ActiveModel = existing.into();
+                active_progress.currently_reading = Set(true);
+                
+                match active_progress.update(conn).await {
+                    Ok(_) => {
+                        println!("Updated book to currently reading status");
+                        Ok(())
+                    }
+                    Err(e) => {
+                        Err(format!("Failed to update book reading status: {}", e))
+                    }
+                }
+            } else {
+                Ok(())
+            }
         }
         Ok(None) => {
-            // find the book from the database.
-            let book = Audiobook::find_by_id(book_id).one(conn).await;
+            // Book not started yet, find the book from the database
+            let book_result = Audiobook::find_by_id(book_id).one(conn).await;
 
-            // Match the query results
-            match book {
-                Ok(e) => {
-                    let book = e.unwrap().to_owned();
-                    let book_chapters: Vec<BookChapter> =
-                        serde_json::from_str(&book.chapters).unwrap();
+            match book_result {
+                Ok(Some(book)) => {
+                    println!("Found book: {} by {}", book.title, book.author);
+                    
+                    // Parse chapters with proper error handling
+                    let book_chapters: Vec<BookChapter> = match serde_json::from_str(&book.chapters) {
+                        Ok(chapters) => chapters,
+                        Err(e) => {
+                            return Err(format!("Failed to parse book chapters: {}", e));
+                        }
+                    };
+                    
+                    // Validate that book has chapters
+                    if book_chapters.is_empty() {
+                        return Err("Book has no chapters available".to_string());
+                    }
 
-                    // Create the Book Object
+                    // Create the progress record
                     let progress = progress::ActiveModel {
                         book_id: Set(book.id),
                         current_chapter: Set(book_chapters[0].id),
@@ -40,28 +74,35 @@ pub async fn start(book_id: i32, db: tauri::State<'_, Db>) -> Result<(), String>
                         status: Set("reading".to_string()),
                     };
 
-                    // Save the Book Progress.
-                    let res = progress.insert(conn).await;
-
-                    match res {
+                    // Save the book progress with proper error handling
+                    match progress.insert(conn).await {
                         Ok(entity) => {
-                            println!("Started Book: {:?}", entity);
+                            println!("Successfully started book: '{}' (ID: {})", book.title, entity.book_id);
+                            Ok(())
                         }
                         Err(err) => {
-                            println!(
-                                "Something went wrong while starting the book! Error: {:?}",
-                                err
-                            )
+                            let error_msg = format!("Failed to save book progress to database: {}", err);
+                            println!("Database error: {:?}", err);
+                            Err(error_msg)
                         }
                     }
                 }
+                Ok(None) => {
+                    let error_msg = format!("Book with ID {} not found in library", book_id);
+                    println!("Error: {}", error_msg);
+                    Err(error_msg)
+                }
                 Err(err) => {
-                    println!("Error finding book: {:?}", err)
+                    let error_msg = format!("Database error while finding book: {}", err);
+                    println!("Database error: {:?}", err);
+                    Err(error_msg)
                 }
             }
         }
-        Err(_) => {}
+        Err(err) => {
+            let error_msg = format!("Database error while checking book progress: {}", err);
+            println!("Database error: {:?}", err);
+            Err(error_msg)
+        }
     }
-
-    Ok(())
 }
