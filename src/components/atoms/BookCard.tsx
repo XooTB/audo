@@ -25,7 +25,7 @@ const BookCard = ({ book }: BookCardProps) => {
   }
 
   return (
-    <Card className="w-full max-w-sm group cursor-pointer border-none shadow-none gap-1 justify-start">
+    <Card className="w-full max-w-sm group cursor-pointer border-none shadow-none gap-1 justify-start py-0 pb-2">
       {/* Image Section - Takes up most of the card */}
       <CardHeader className="p-0">
         <div className="relative overflow-hidden rounded-md h-72">

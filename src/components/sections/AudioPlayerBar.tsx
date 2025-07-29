@@ -7,9 +7,9 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Heart } from "lucide-react
 import formatTimestamp from "../../lib/formatTimestamp";
 import { invoke } from "@tauri-apps/api/core";
 
-export interface AudioplayerBarProps {}
+export interface AudioplayerBarProps { }
 
-const AudioPlayerBar = ({}: AudioplayerBarProps) => {
+const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
   const [paused, setPaused] = useState<boolean>(true);
   const [length] = useState<number>(600);
   const [current, setCurrent] = useState<number>(0);
@@ -53,8 +53,6 @@ const AudioPlayerBar = ({}: AudioplayerBarProps) => {
     }
     setPaused((prev) => !prev);
   };
-
-  // const progress = (current / length) * 100;
 
   return (
     <Card className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/95 shadow-lg rounded-none">
@@ -102,7 +100,7 @@ const AudioPlayerBar = ({}: AudioplayerBarProps) => {
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <SkipBack className="h-4 w-4" />
             </Button>
-            
+
             <Button
               onClick={togglePlayPause}
               size="sm"
@@ -114,7 +112,7 @@ const AudioPlayerBar = ({}: AudioplayerBarProps) => {
                 <Pause className="h-4 w-4" />
               )}
             </Button>
-            
+
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -129,11 +127,11 @@ const AudioPlayerBar = ({}: AudioplayerBarProps) => {
                 className="h-8 w-8 p-0"
                 onClick={() => setIsFavorited(!isFavorited)}
               >
-                <Heart 
-                  className={`h-4 w-4 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-slate-600'}`} 
+                <Heart
+                  className={`h-4 w-4 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-slate-600'}`}
                 />
               </Button>
-              
+
               <div className="flex items-center space-x-2 w-24">
                 <Volume2 className="h-4 w-4 text-slate-600" />
                 <Slider

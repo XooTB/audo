@@ -13,7 +13,7 @@ function App() {
     <Router>
       <div className="text-xl">
         <NavBar />
-        <main className="px-10">
+        <main className="px-2 pb-36">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/library" element={<Library />} />

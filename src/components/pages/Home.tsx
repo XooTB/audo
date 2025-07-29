@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-6 py-16">
+      <div className="container mx-auto py-16">
         <div className="text-center mb-16">
           <h1 className="text-6xl font-bold text-slate-900 mb-6">
             Audo
