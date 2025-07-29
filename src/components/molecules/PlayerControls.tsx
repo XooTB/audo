@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 const PlayerControls = () => {
   const [paused, setPaused] = useState<boolean>(true);
-  const [length, setLength] = useState<number>(600);
+  const [length] = useState<number>(600);
   const [current, setCurrent] = useState<number>(0);
   const intervalRef = useRef<number | null>(null);
 

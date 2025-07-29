@@ -4,7 +4,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 import { LibBook } from "../../types/book.d"
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 const Library: React.FC = () => {
   const [books, setBooks] = useState<LibBook[] | null>(null);

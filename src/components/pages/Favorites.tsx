@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const Favorites: React.FC = () => {
-  const favorites = []; // This would come from your favorites state/context
+  // const favorites = []; // This would come from your favorites state/context
 
   const EmptyFavorites = () => (
     <div className="flex flex-col items-center justify-center py-20">

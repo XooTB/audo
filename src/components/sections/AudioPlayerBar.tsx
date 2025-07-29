@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -11,7 +11,7 @@ export interface AudioplayerBarProps {}
 
 const AudioPlayerBar = ({}: AudioplayerBarProps) => {
   const [paused, setPaused] = useState<boolean>(true);
-  const [length, setLength] = useState<number>(600);
+  const [length] = useState<number>(600);
   const [current, setCurrent] = useState<number>(0);
   const [volume, setVolume] = useState<number>(80);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
@@ -54,7 +54,7 @@ const AudioPlayerBar = ({}: AudioplayerBarProps) => {
     setPaused((prev) => !prev);
   };
 
-  const progress = (current / length) * 100;
+  // const progress = (current / length) * 100;
 
   return (
     <Card className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/95 shadow-lg rounded-none">
