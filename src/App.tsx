@@ -6,6 +6,7 @@ import Library from "./components/pages/Library";
 import CurrentlyListening from "./components/pages/CurrentlyListening";
 import Favorites from "./components/pages/Favorites";
 import AudioPlayerBar from "./components/sections/AudioPlayerBar"
+import Home from "@/components/pages/Home"
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
         <NavBar />
         <main className="px-10">
           <Routes>
-            <Route path="/" element={<Library />} />
+            <Route path="/" element={<Home />} />
             <Route path="/library" element={<Library />} />
             <Route path="/now-playing" element={<CurrentlyListening />} />
             <Route path="/favorites" element={<Favorites />} />
