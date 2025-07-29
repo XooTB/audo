@@ -143,6 +143,14 @@ impl AudioPlayer {
                 }
 
                 let mut buffer = audio_buffer.lock().unwrap();
+                let buffer_size = buffer.len();
+                
+                if buffer_size == 0 {
+                    println!("Audio callback: buffer empty, filling with silence");
+                } else if buffer_size % 44100 == 0 {
+                    // Log periodically (every second worth of samples)
+                    println!("Audio callback: buffer has {} samples", buffer_size);
+                }
                 
                 for frame in data.chunks_mut(channels) {
                     if buffer.is_empty() {
