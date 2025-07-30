@@ -5,7 +5,7 @@ pub mod database;
 
 // Imports
 use crate::audio_lib::controls::play::play;
-use crate::audio_lib::controls::pause::{pause, toggle_play_pause, get_playback_state};
+use crate::audio_lib::controls::pause::{pause, toggle_play_pause, get_playback_state, seek_to_position, skip_forward, skip_backward};
 use crate::database::sqlite::Db;
 use book_managers::import_book::import_book;
 use book_managers::progress::start::start;
@@ -46,7 +46,10 @@ pub fn run() {
             play,
             pause,
             toggle_play_pause,
-            get_playback_state
+            get_playback_state,
+            seek_to_position,
+            skip_forward,
+            skip_backward
         ])
         .run(tauri::generate_context!())
         .expect("error while running Tauri app");

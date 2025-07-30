@@ -2,7 +2,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, Stream, StreamConfig, SupportedStreamConfig};
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 pub struct AudioPlayer {
     _stream: Option<Stream>,
@@ -11,6 +11,7 @@ pub struct AudioPlayer {
     sample_rate: u32,
     channels: u16,
     is_headless: bool,
+    buffer_position: Arc<AtomicUsize>,
 }
 
 impl AudioPlayer {
@@ -54,6 +55,7 @@ impl AudioPlayer {
     fn create_headless_player() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let audio_buffer: Arc<Mutex<VecDeque<f32>>> = Arc::new(Mutex::new(VecDeque::new()));
         let is_playing = Arc::new(AtomicBool::new(false));
+        let buffer_position = Arc::new(AtomicUsize::new(0));
         
         Ok(AudioPlayer {
             _stream: None,
@@ -62,6 +64,7 @@ impl AudioPlayer {
             sample_rate: 44100,
             channels: 2,
             is_headless: true,
+            buffer_position,
         })
     }
     
@@ -81,8 +84,9 @@ impl AudioPlayer {
 
         let audio_buffer: Arc<Mutex<VecDeque<f32>>> = Arc::new(Mutex::new(VecDeque::new()));
         let is_playing = Arc::new(AtomicBool::new(false));
+        let buffer_position = Arc::new(AtomicUsize::new(0));
 
-        let stream = Self::create_stream(&device, &config, audio_buffer.clone(), is_playing.clone())?;
+        let stream = Self::create_stream(&device, &config, audio_buffer.clone(), is_playing.clone(), buffer_position.clone())?;
 
         Ok(AudioPlayer {
             _stream: Some(stream),
@@ -91,6 +95,7 @@ impl AudioPlayer {
             sample_rate,
             channels,
             is_headless: false,
+            buffer_position,
         })
     }
     
@@ -109,8 +114,9 @@ impl AudioPlayer {
 
         let audio_buffer: Arc<Mutex<VecDeque<f32>>> = Arc::new(Mutex::new(VecDeque::new()));
         let is_playing = Arc::new(AtomicBool::new(false));
+        let buffer_position = Arc::new(AtomicUsize::new(0));
 
-        let stream = Self::create_stream(&device, &config, audio_buffer.clone(), is_playing.clone())?;
+        let stream = Self::create_stream(&device, &config, audio_buffer.clone(), is_playing.clone(), buffer_position.clone())?;
 
         Ok(AudioPlayer {
             _stream: Some(stream),
@@ -119,6 +125,7 @@ impl AudioPlayer {
             sample_rate,
             channels,
             is_headless: false,
+            buffer_position,
         })
     }
 
@@ -127,6 +134,7 @@ impl AudioPlayer {
         config: &SupportedStreamConfig,
         audio_buffer: Arc<Mutex<VecDeque<f32>>>,
         is_playing: Arc<AtomicBool>,
+        buffer_position: Arc<AtomicUsize>,
     ) -> Result<Stream, Box<dyn std::error::Error + Send + Sync>> {
         let config: StreamConfig = config.clone().into();
         let channels = config.channels as usize;
@@ -165,6 +173,9 @@ impl AudioPlayer {
                         }
                     }
                 }
+                
+                // Update buffer position for tracking
+                buffer_position.store(buffer.len(), Ordering::Relaxed);
             },
             |err| eprintln!("Audio stream error: {}", err),
             None,
@@ -197,6 +208,7 @@ impl AudioPlayer {
     pub fn clear_buffer(&self) {
         let mut buffer = self.audio_buffer.lock().unwrap();
         buffer.clear();
+        self.buffer_position.store(0, Ordering::Relaxed);
         println!("Audio buffer cleared");
     }
 
@@ -215,6 +227,14 @@ impl AudioPlayer {
 
     pub fn is_headless(&self) -> bool {
         self.is_headless
+    }
+
+    pub fn get_buffer_position(&self) -> usize {
+        self.buffer_position.load(Ordering::Relaxed)
+    }
+
+    pub fn reset_buffer_position(&self) {
+        self.buffer_position.store(0, Ordering::Relaxed);
     }
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -12,15 +12,20 @@ export interface AudioplayerBarProps { }
 const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
   const [paused, setPaused] = useState<boolean>(true);
   const [length] = useState<number>(600);
-  const [current, setCurrent] = useState<number>(0);
+  const [actualPosition, setActualPosition] = useState<number>(0);
   const [volume, setVolume] = useState<number>(80);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
-  const intervalRef = useRef<number | null>(null);
   const [, setPlaybackState] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handlePlayerSeek = (value: number[]) => {
-    setCurrent(value[0]);
+  const handlePlayerSeek = async (value: number[]) => {
+    const newPosition = value[0];
+    setActualPosition(newPosition);
+    try {
+      await invoke("seek_to_position", { positionSeconds: newPosition });
+    } catch (error) {
+      console.error("Error seeking:", error);
+    }
   };
 
   const handleVolumeChange = (value: number[]) => {
@@ -34,6 +39,9 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
         const state = await invoke("get_playback_state");
         setPlaybackState(state);
         setPaused(!(state as any)?.is_playing);
+        if ((state as any)?.current_position_seconds !== undefined) {
+          setActualPosition(Math.floor((state as any).current_position_seconds));
+        }
       } catch (error) {
         console.error("Error fetching playback state:", error);
       }
@@ -45,24 +53,7 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
     return () => clearInterval(stateInterval);
   }, []);
 
-  useEffect(() => {
-    if (!paused) {
-      intervalRef.current = window.setInterval(() => {
-        setCurrent((prev) => (prev < length ? prev + 1 : length));
-      }, 1000);
-    } else {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [paused]);
+  // Position is now tracked via backend polling, no need for local timer
 
   const togglePlayPause = async () => {
     try {
@@ -93,14 +84,14 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
         {/* Progress bar at the top */}
         <div className="mb-4">
           <Slider
-            value={[current]}
+            value={[actualPosition]}
             max={length}
             step={1}
             onValueChange={handlePlayerSeek}
             className="w-full cursor-pointer"
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
-            <span>{formatTimestamp(current)}</span>
+            <span>{formatTimestamp(actualPosition)}</span>
             <span>{formatTimestamp(length)}</span>
           </div>
         </div>
@@ -130,7 +121,18 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
 
           {/* Player Controls */}
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0"
+              onClick={async () => {
+                try {
+                  await invoke("skip_backward", { seconds: 15 });
+                } catch (error) {
+                  console.error("Error skipping backward:", error);
+                }
+              }}
+            >
               <SkipBack className="h-4 w-4" />
             </Button>
 
@@ -149,7 +151,18 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
               )}
             </Button>
 
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0"
+              onClick={async () => {
+                try {
+                  await invoke("skip_forward", { seconds: 15 });
+                } catch (error) {
+                  console.error("Error skipping forward:", error);
+                }
+              }}
+            >
               <SkipForward className="h-4 w-4" />
             </Button>
           </div>

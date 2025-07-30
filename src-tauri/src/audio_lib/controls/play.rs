@@ -57,9 +57,12 @@ pub async fn play(db: tauri::State<'_, Db>) -> Result<(), String> {
                         }
                         drop(audio_state_guard);
                         
-                        // Update current book
+                        // Update current book and store file info for seeking
                         let mut audio_state_guard = audio_state.lock().unwrap();
                         audio_state_guard.current_book_id = Some(book.id);
+                        audio_state_guard.current_file_path = Some(book.location.clone());
+                        audio_state_guard.target_sample_rate = target_sample_rate;
+                        audio_state_guard.target_channels = target_channels;
                         drop(audio_state_guard);
                         
                         // Start background streaming thread
@@ -67,10 +70,14 @@ pub async fn play(db: tauri::State<'_, Db>) -> Result<(), String> {
                     }
                     
                     // Start playback
-                    let audio_state_guard = audio_state.lock().unwrap();
+                    let mut audio_state_guard = audio_state.lock().unwrap();
                     if let Some(ref player) = audio_state_guard.player {
                         player.play();
-                        println!("Started playing: {}", book.title);
+                        // Only start timing if we weren't already playing
+                        if audio_state_guard.playback_start_time.is_none() {
+                            audio_state_guard.start_playback();
+                        }
+                        println!("Started playing: {} at position {:.2}s", book.title, audio_state_guard.current_position_seconds);
                     }
                 } else {
                     return Err("Audio player not available".to_string());
@@ -407,7 +414,142 @@ fn start_streaming_thread(file_path: &str, target_sample_rate: u32, target_chann
 }
 
 fn load_next_audio_chunk(file_path: &str, target_sample_rate: u32, target_channels: u16) -> Result<Vec<f32>, String> {
-    // Load another 10 second chunk - in a full implementation this would track position
-    // This is a simplified version that will just reload from start (not ideal but works for testing)
-    load_audio_chunk_with_limit(file_path, target_sample_rate, target_channels, 10)
+    // For streaming, we need to track where we are in the file
+    // For now, we'll load from the current state position + some buffer
+    let audio_state = state::get_audio_state();
+    let current_position = {
+        let mut audio_state_guard = audio_state.lock().unwrap();
+        audio_state_guard.get_current_position()
+    };
+    
+    // Load the next 10 seconds from the current position
+    load_audio_from_position(file_path, target_sample_rate, target_channels, current_position, 10)
+}
+
+pub fn load_audio_from_position(file_path: &str, target_sample_rate: u32, target_channels: u16, start_seconds: f64, duration_seconds: u32) -> Result<Vec<f32>, String> {
+    // Initialize the ffmpeg context
+    let mut context = init::init(file_path).map_err(|e| format!("Failed to init ffmpeg: {}", e))?;
+    
+    // Find the audio stream and get its info
+    let audio_stream = context
+        .streams()
+        .best(ffmpeg::media::Type::Audio)
+        .ok_or("No audio stream found")?;
+    
+    let stream_index = audio_stream.index();
+    let stream_params = audio_stream.parameters();
+    let time_base = audio_stream.time_base();
+    
+    // Create decoder for the audio stream BEFORE seeking
+    let codec_context = ffmpeg::codec::context::Context::from_parameters(stream_params)
+        .map_err(|e| format!("Failed to create codec context: {}", e))?;
+    
+    let mut decoder = codec_context.decoder().audio()
+        .map_err(|e| format!("Failed to create audio decoder: {}", e))?;
+    
+    // Get audio stream info
+    let input_sample_rate = decoder.rate();
+    let input_channels = decoder.channels();
+    
+    // Calculate the proper seek timestamp using AV_TIME_BASE (more reliable)
+    let seek_timestamp = (start_seconds * ffmpeg::ffi::AV_TIME_BASE as f64) as i64;
+    
+    println!("Seeking to {:.2}s (timestamp: {})", start_seconds, seek_timestamp);
+    
+    // Seek to the desired position using AVSEEK_FLAG_BACKWARD for more accurate seeking
+    match context.seek(seek_timestamp, seek_timestamp..i64::MAX) {
+        Ok(_) => println!("Successfully seeked to {:.2}s", start_seconds),
+        Err(e) => {
+            println!("Initial seek failed: {}, trying backward seek", e);
+            // Try a more conservative seek approach
+            let conservative_seek = ((start_seconds - 1.0).max(0.0) * ffmpeg::ffi::AV_TIME_BASE as f64) as i64;
+            context.seek(conservative_seek, conservative_seek..i64::MAX)
+                .map_err(|e| format!("Failed to seek in audio file to {:.2}s: {}", start_seconds, e))?;
+        }
+    }
+    
+    // Flush the decoder after seeking
+    decoder.flush();
+    
+    println!("Loading audio from {:.2}s - Input: {}Hz, {} channels", start_seconds, input_sample_rate, input_channels);
+    println!("Target output: {}Hz, {} channels", target_sample_rate, target_channels);
+    
+    // Load the requested duration
+    let max_samples = target_sample_rate as usize * target_channels as usize * duration_seconds as usize;
+    let mut chunk_samples = Vec::with_capacity(max_samples);
+    let mut first_frame_found = false;
+    
+    for (stream, packet) in context.packets() {
+        if stream.index() == stream_index {
+            // Check packet timestamp to see if we're at the right position
+            if let Some(pts) = packet.pts() {
+                let packet_time = pts as f64 * time_base.numerator() as f64 / time_base.denominator() as f64;
+                
+                // Skip packets that are still before our target time
+                if packet_time < start_seconds && !first_frame_found {
+                    continue;
+                }
+                
+                // Stop if we're past our desired duration
+                if first_frame_found && packet_time > start_seconds + duration_seconds as f64 {
+                    break;
+                }
+            }
+            
+            decoder.send_packet(&packet)
+                .map_err(|e| format!("Failed to send packet: {}", e))?;
+            
+            let mut frame = frame::Audio::empty();
+            while decoder.receive_frame(&mut frame).is_ok() {
+                if let Some(pts) = frame.pts() {
+                    let frame_time = pts as f64 * time_base.numerator() as f64 / time_base.denominator() as f64;
+                    
+                    // Skip frames that are before our target start time
+                    if frame_time < start_seconds {
+                        continue;
+                    }
+                    
+                    if !first_frame_found {
+                        first_frame_found = true;
+                        println!("Found first frame at time {:.2}s (target: {:.2}s)", frame_time, start_seconds);
+                    }
+                }
+                
+                let samples = decode_audio_frame(&frame)?;
+                
+                if !samples.is_empty() {
+                    chunk_samples.extend(samples);
+                    
+                    // Stop when we reach the duration limit
+                    if chunk_samples.len() >= max_samples {
+                        println!("Reached {} second limit from position {:.2}s, loaded {} samples", duration_seconds, start_seconds, chunk_samples.len());
+                        break;
+                    }
+                }
+            }
+            
+            // Break from outer loop too
+            if chunk_samples.len() >= max_samples {
+                break;
+            }
+        }
+    }
+    
+    println!("Loaded {} samples from position {:.2}s", chunk_samples.len(), start_seconds);
+    
+    if chunk_samples.is_empty() {
+        return Err("No audio samples were decoded from the seek position".to_string());
+    }
+    
+    // Resample if needed
+    if input_sample_rate != target_sample_rate || input_channels != target_channels {
+        println!("Resampling chunk from {}Hz/{} channels to {}Hz/{} channels", 
+                 input_sample_rate, input_channels, target_sample_rate, target_channels);
+        let resampled = resample_audio(chunk_samples, input_sample_rate, input_channels as u16, target_sample_rate, target_channels)?;
+        println!("Resampled chunk: {} samples", resampled.len());
+        Ok(resampled)
+    } else {
+        println!("No resampling needed, returning {} samples", chunk_samples.len());
+        Ok(chunk_samples)
+    }
 }
