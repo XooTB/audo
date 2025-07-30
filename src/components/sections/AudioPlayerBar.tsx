@@ -1,81 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipBack, SkipForward, Volume2, Heart } from "lucide-react";
+import { Play, SkipBack, SkipForward, Volume2, Heart } from "lucide-react";
 import formatTimestamp from "../../lib/formatTimestamp";
-import { invoke } from "@tauri-apps/api/core";
 
 export interface AudioplayerBarProps { }
 
 const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
-  const [paused, setPaused] = useState<boolean>(true);
-  const [length] = useState<number>(600);
-  const [actualPosition, setActualPosition] = useState<number>(0);
   const [volume, setVolume] = useState<number>(80);
   const [isFavorited, setIsFavorited] = useState<boolean>(false);
-  const [, setPlaybackState] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const handlePlayerSeek = async (value: number[]) => {
-    const newPosition = value[0];
-    setActualPosition(newPosition);
-    try {
-      await invoke("seek_to_position", { positionSeconds: newPosition });
-    } catch (error) {
-      console.error("Error seeking:", error);
-    }
-  };
 
   const handleVolumeChange = (value: number[]) => {
     setVolume(value[0]);
-  };
-
-  // Fetch playback state periodically
-  useEffect(() => {
-    const fetchPlaybackState = async () => {
-      try {
-        const state = await invoke("get_playback_state");
-        setPlaybackState(state);
-        setPaused(!(state as any)?.is_playing);
-        if ((state as any)?.current_position_seconds !== undefined) {
-          setActualPosition(Math.floor((state as any).current_position_seconds));
-        }
-      } catch (error) {
-        console.error("Error fetching playback state:", error);
-      }
-    };
-
-    fetchPlaybackState();
-    const stateInterval = setInterval(fetchPlaybackState, 1000);
-
-    return () => clearInterval(stateInterval);
-  }, []);
-
-  // Position is now tracked via backend polling, no need for local timer
-
-  const togglePlayPause = async () => {
-    try {
-      setIsLoading(true);
-      if (paused) {
-        // If currently paused, try to play
-        await invoke("play");
-        setPaused(false);
-        console.log("Started playback");
-      } else {
-        // If currently playing, pause
-        await invoke("pause");
-        setPaused(true);
-        console.log("Paused playback");
-      }
-    } catch (error) {
-      console.error("Error toggling playback:", error);
-      // Revert state on error
-      setPaused((prev) => prev);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -84,15 +22,15 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
         {/* Progress bar at the top */}
         <div className="mb-4">
           <Slider
-            value={[actualPosition]}
-            max={length}
+            value={[0]}
+            max={600}
             step={1}
-            onValueChange={handlePlayerSeek}
             className="w-full cursor-pointer"
+            disabled={true}
           />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
-            <span>{formatTimestamp(actualPosition)}</span>
-            <span>{formatTimestamp(length)}</span>
+            <span>{formatTimestamp(0)}</span>
+            <span>{formatTimestamp(600)}</span>
           </div>
         </div>
 
@@ -108,13 +46,13 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="font-semibold text-slate-900 truncate text-sm">
-                Dungeon Crawler Carl
+                Audio Player (Coming Soon)
               </h4>
               <p className="text-xs text-slate-600 truncate">
-                by Matt Dinniman
+                Player functionality will be implemented here
               </p>
               <Badge variant="secondary" className="text-xs mt-1">
-                Chapter 3 of 12
+                Ready for Implementation
               </Badge>
             </div>
           </div>
@@ -125,43 +63,24 @@ const AudioPlayerBar = ({ }: AudioplayerBarProps) => {
               variant="ghost" 
               size="sm" 
               className="h-8 w-8 p-0"
-              onClick={async () => {
-                try {
-                  await invoke("skip_backward", { seconds: 15 });
-                } catch (error) {
-                  console.error("Error skipping backward:", error);
-                }
-              }}
+              disabled={true}
             >
               <SkipBack className="h-4 w-4" />
             </Button>
 
             <Button
-              onClick={togglePlayPause}
               size="sm"
               className="h-10 w-10 rounded-full"
-              disabled={isLoading}
+              disabled={true}
             >
-              {isLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : paused ? (
-                <Play className="h-4 w-4 ml-0.5" />
-              ) : (
-                <Pause className="h-4 w-4" />
-              )}
+              <Play className="h-4 w-4 ml-0.5" />
             </Button>
 
             <Button 
               variant="ghost" 
               size="sm" 
               className="h-8 w-8 p-0"
-              onClick={async () => {
-                try {
-                  await invoke("skip_forward", { seconds: 15 });
-                } catch (error) {
-                  console.error("Error skipping forward:", error);
-                }
-              }}
+              disabled={true}
             >
               <SkipForward className="h-4 w-4" />
             </Button>
