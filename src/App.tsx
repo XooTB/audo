@@ -1,11 +1,20 @@
-import { Button } from "./components/ui/button";
 import "./index.css";
+import { Routes, Route } from "react-router";
+import Home from "./pages/Home";
+import Header from "./sections/Header";
+import Settings from "./pages/Settings";
+import Library from "./pages/Library";
 
 function App() {
   return (
-    <main className="container">
-      <Button className="hover:cursor-pointer">Click me</Button>
-    </main>
+    <>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/library" element={<Library />} />
+      </Routes>
+    </>
   );
 }
 
