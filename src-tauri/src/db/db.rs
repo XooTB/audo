@@ -1,5 +1,4 @@
-use sqlx::migrate::Migrator;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{migrate::Migrator, sqlite::SqlitePoolOptions, SqlitePool};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
