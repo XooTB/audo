@@ -1,4 +1,5 @@
-mod db;
+pub mod db;
+
 use db::init_db;
 use tauri::Manager;
 
