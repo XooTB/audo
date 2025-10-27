@@ -1,6 +1,8 @@
+use sqlx::migrate::Migrator;
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
+static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
 pub async fn init_db(app: &AppHandle) -> Arc<SqlitePool> {
     let app_data_dir = app.path().app_data_dir().expect("app data dir not found");
@@ -17,6 +19,12 @@ pub async fn init_db(app: &AppHandle) -> Arc<SqlitePool> {
         .connect(&db_url)
         .await
         .expect("Failed to connect to SQLite");
+
+    // Run migrations
+    MIGRATOR
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations.");
 
     Arc::new(pool)
 }

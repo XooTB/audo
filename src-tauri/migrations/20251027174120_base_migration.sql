@@ -1,0 +1,12 @@
+CREATE TABLE audio_books (
+	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	book_name TEXT NOT NULL,
+	file_location TEXT NOT NULL,
+    cover_image TEXT NULL,
+    author TEXT NULL,
+    narrator TEXT NULL,
+    duration INTEGER NULL,
+    size INTEGER NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
