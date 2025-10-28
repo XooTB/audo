@@ -35,7 +35,7 @@ const Home = ({}: Props) => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-4 py-2">
         {books.map((book) => (
           <Card key={book.id} className="overflow-hidden">
-            <div className="aspect-[2/3] relative">
+            <div className="aspect-2/3 relative">
               <img
                 src={PosterPlaceholder}
                 alt="Audiobook Cover"
