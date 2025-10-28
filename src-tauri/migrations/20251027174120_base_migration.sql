@@ -1,6 +1,6 @@
 CREATE TABLE audio_books (
 	id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	book_name TEXT NOT NULL,
+	name TEXT NOT NULL,
 	file_location TEXT NOT NULL,
     cover_image TEXT NULL,
     author TEXT NULL,

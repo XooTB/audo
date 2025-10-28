@@ -1,5 +1,7 @@
+pub mod commands;
 pub mod db;
 
+use commands::get_all_books;
 use db::init_db;
 use tauri::Manager;
 
@@ -18,7 +20,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![get_all_books])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
