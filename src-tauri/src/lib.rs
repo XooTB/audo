@@ -1,13 +1,16 @@
 pub mod commands;
 pub mod db;
+pub mod utils;
 
-use commands::get_all_books;
+use commands::{add_book, get_all_books};
 use db::init_db;
 use tauri::Manager;
+use utils::extract_metadata;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let app_handle = app.handle();
 
@@ -20,7 +23,11 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_all_books])
+        .invoke_handler(tauri::generate_handler![
+            get_all_books,
+            extract_metadata,
+            add_book
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
