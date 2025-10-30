@@ -5,7 +5,7 @@ CREATE TABLE audio_books (
     cover_image TEXT NULL,
     author TEXT NULL,
     narrator TEXT NULL,
-    duration INTEGER NULL,
+    duration REAL NULL,
     size INTEGER NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
