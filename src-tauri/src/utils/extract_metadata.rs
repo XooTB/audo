@@ -3,14 +3,14 @@ use tauri_plugin_shell::ShellExt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Metadata {
-    title: String,
-    author: String,
-    narrator: String,
-    duration: String,
-    start_time: String,
-    size: String,
-    description: String,
-    date: String,
+    pub title: String,
+    pub author: String,
+    pub narrator: String,
+    pub duration: String,
+    pub start_time: String,
+    pub size: String,
+    pub description: String,
+    pub date: String,
 }
 
 // Structs to parse ffprobe JSON output
@@ -42,16 +42,13 @@ struct Tags {
 }
 
 #[tauri::command]
-pub async fn extract_metadata(
-    app: tauri::AppHandle,
-    file_path: String,
-) -> Result<Metadata, String> {
+pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<Metadata, String> {
     let command = app
         .shell()
         .sidecar("ffprobe")
         .unwrap()
         .args(&["-v", "quiet", "-print_format", "json", "-show_format"])
-        .arg(&file_path);
+        .arg(file_path);
 
     // Execute the command and get output
     let output = command.output().await.map_err(|e| e.to_string())?;
