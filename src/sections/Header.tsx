@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Menubar,
   MenubarContent,
@@ -6,8 +5,8 @@ import {
   MenubarMenu,
   MenubarTrigger,
 } from "@/components/ui/menubar";
-import { PlusIcon } from "lucide-react";
 import { Link } from "react-router";
+import ImportBtn from "@/components/importBtn";
 
 type Props = {};
 
@@ -61,9 +60,7 @@ const Header = ({}: Props) => {
         <h1 className="text-2xl font-bold uppercase">Audo</h1>
       </div>
       <div className="w-1/3 text-right">
-        <Button className="gap-2 text-sm hover:bg-accent hover:text-accent-foreground hover:border-accent hover:cursor-pointer">
-          Import <PlusIcon className="size-4" />
-        </Button>
+        <ImportBtn />
       </div>
     </div>
   );
