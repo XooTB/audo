@@ -16,6 +16,8 @@ interface CurrentlyListeningStore {
   setAudioRef: (
     audioRef: React.RefObject<HTMLAudioElement | null> | null
   ) => void;
+  fileUrl: string | null;
+  setFileUrl: (fileUrl: string | null) => void;
 }
 
 export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
@@ -33,5 +35,7 @@ export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
     audioRef: null as React.RefObject<HTMLAudioElement | null> | null,
     setAudioRef: (audioRef: React.RefObject<HTMLAudioElement | null> | null) =>
       set({ audioRef }),
+    fileUrl: null as string | null,
+    setFileUrl: (fileUrl: string | null) => set({ fileUrl }),
   })
 );

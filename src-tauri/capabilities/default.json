@@ -9,6 +9,9 @@
     "core:default",
     "opener:default",
     "shell:default",
+    "fs:default",
+    "fs:read-all",
+    "fs:allow-read",
     {
       "identifier": "shell:allow-execute",
       "allow": [
@@ -24,7 +27,6 @@
           "sidecar": true
         }
       ]
-    },
-    "dialog:default"
+    }
   ]
 }

@@ -9,20 +9,14 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import PosterPlaceholder from "@/assets/poster_placeholder.png";
+import { useCurrentlyListeningStore } from "@/store/CurrentlyListening";
+import { Book } from "@/types/book.d";
 
 type Props = {};
 
-interface Book {
-  id: number;
-  name: string;
-  file_location: string;
-  cover_image: string;
-  author: string;
-  narrator: string;
-}
-
 const Home = ({}: Props) => {
   const [books, setBooks] = useState<Book[]>([]);
+  const { setBook } = useCurrentlyListeningStore();
 
   useEffect(() => {
     invoke("get_all_books", {}).then((result) => {
@@ -51,7 +45,11 @@ const Home = ({}: Props) => {
               </CardDescription>
             </CardHeader>
             <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setBook(book)}
+              >
                 Listen
               </Button>
             </CardFooter>
