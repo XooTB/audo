@@ -2,7 +2,7 @@ pub mod commands;
 pub mod db;
 pub mod utils;
 
-use commands::{add_book, get_all_books};
+use commands::{add_book, get_all_books, play};
 use db::init_db;
 use tauri::Manager;
 use utils::extract_metadata;
@@ -28,7 +28,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_all_books,
             extract_metadata,
-            add_book
+            add_book,
+            play,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

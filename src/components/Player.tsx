@@ -28,12 +28,6 @@ export default function Player() {
   }, [book]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background shadow-xs shadow-foreground/10 z-50">
-      <audio
-        controls
-        ref={localAudioRef}
-        src={"asset://localhost/%2Fhome%2FXooT%2Faudiobooks%2Faudiobook_2.m4b"}
-      />
-    </div>
+    <div className="fixed bottom-0 left-0 right-0 bg-background shadow-xs shadow-foreground/10 z-50"></div>
   );
 }

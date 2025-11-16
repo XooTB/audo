@@ -5,7 +5,6 @@ import Header from "./sections/Header";
 import Settings from "./pages/Settings";
 import Library from "./pages/Library";
 import AudioBar from "@/sections/AudioBar";
-import Player from "@/components/Player";
 
 function App() {
   return (
@@ -17,7 +16,6 @@ function App() {
         <Route path="/library" element={<Library />} />
       </Routes>
       <AudioBar />
-      <Player />
     </>
   );
 }

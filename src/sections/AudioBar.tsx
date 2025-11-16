@@ -9,6 +9,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import placeholder from "@/assets/player_placeholder.png";
 import { useCurrentlyListeningStore } from "@/store/CurrentlyListening";
+import { invoke } from "@tauri-apps/api/core";
 
 type Props = {};
 
@@ -18,6 +19,9 @@ export default function AudioBar({}: Props) {
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
+    invoke("play").then((result) => {
+      console.log(result);
+    });
   };
 
   const handleSkipBackward = () => {
