@@ -2,8 +2,9 @@ pub mod commands;
 pub mod db;
 pub mod utils;
 
-use commands::{add_book, get_all_books, play};
+use commands::{add_book, get_all_books, play, AudioState};
 use db::init_db;
+use std::sync::Mutex;
 use tauri::Manager;
 use utils::extract_metadata;
 
@@ -19,6 +20,9 @@ pub fn run() {
                 let pool = init_db(&app_handle).await;
                 app_handle.manage(pool);
             });
+
+            // Initialize the audio state
+            app.manage(Mutex::new(AudioState::new()));
 
             Ok(())
         })
