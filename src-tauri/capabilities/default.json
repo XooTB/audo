@@ -12,6 +12,7 @@
     "fs:default",
     "fs:read-all",
     "fs:allow-read",
+    "dialog:default",
     {
       "identifier": "shell:allow-execute",
       "allow": [
@@ -25,6 +26,14 @@
           ],
           "name": "binaries/ffmpeg/bin/ffprobe",
           "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "**/*"
         }
       ]
     }
