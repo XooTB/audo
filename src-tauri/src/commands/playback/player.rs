@@ -50,8 +50,15 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) -> Result<(), String> {
+        // If the source is set, check if it's already appended with the sink
         if let Some(source) = self.source.take() {
-            self.sink.as_mut().unwrap().append(source);
+            if self.sink.as_mut().unwrap().len() == 0 {
+                println!("Appending source to the sink...");
+                self.sink.as_mut().unwrap().append(source);
+            } else {
+                println!("Source already appended to the sink, playing...");
+                self.sink.as_mut().unwrap().play();
+            }
         } else {
             return Err("No source found".to_string());
         }
@@ -61,6 +68,7 @@ impl AudioPlayer {
     pub fn pause(&mut self) -> Result<(), String> {
         if let Some(sink) = self.sink.as_mut() {
             sink.pause();
+            println!("Sink paused!")
         } else {
             return Err("No sink found".to_string());
         }
