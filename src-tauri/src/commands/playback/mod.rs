@@ -1,3 +1,6 @@
 pub mod play;
+pub mod player;
 
-pub use play::AudioState;
+
+pub use player::AudioPlayer;
+pub use play::{play, pause};

@@ -2,7 +2,8 @@ pub mod commands;
 pub mod db;
 pub mod utils;
 
-use commands::{add_book, get_all_books, play, AudioState};
+use commands::{add_book, get_all_books, play, pause};
+use commands::playback::AudioPlayer;
 use db::init_db;
 use std::sync::Mutex;
 use tauri::Manager;
@@ -22,7 +23,9 @@ pub fn run() {
             });
 
             // Initialize the audio state
-            app.manage(Mutex::new(AudioState::new()));
+            let mut audio_player = AudioPlayer::new();
+            audio_player.init().expect("Failed to initialize audio player");
+            app.manage(Mutex::new(audio_player));
 
             Ok(())
         })
@@ -34,6 +37,7 @@ pub fn run() {
             extract_metadata,
             add_book,
             play,
+            pause,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -19,9 +19,15 @@ export default function AudioBar({}: Props) {
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
-    invoke("play").then((result) => {
-      console.log(result);
-    });
+    if(isPlaying) {
+      invoke("pause").then((result) => {
+        console.log("Paused");
+      });
+    } else {
+      invoke("play", {filePath: "/home/xoot/audiobooks/01 All These Worlds.m4b"}).then((result) => {
+        console.log("Played");
+      });
+    }
   };
 
   const handleSkipBackward = () => {
