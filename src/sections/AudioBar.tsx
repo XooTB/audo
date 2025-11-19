@@ -14,17 +14,18 @@ import { invoke } from "@tauri-apps/api/core";
 type Props = {};
 
 export default function AudioBar({}: Props) {
-  const { book, isPlaying, setIsPlaying, currentTime, duration, audioRef } =
+  const { book, bookFileLocation, isPlaying, setIsPlaying, currentTime, duration, audioRef } =
     useCurrentlyListeningStore();
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
     if(isPlaying) {
-      invoke("pause").then((result) => {
+      invoke("pause").then(() => {
         console.log("Paused");
       });
     } else {
-      invoke("play", {filePath: "/home/xoot/audiobooks/01 All These Worlds.m4b"}).then((result) => {
+      if(!bookFileLocation) return;
+      invoke("play", {filePath: bookFileLocation}).then(() => {
         console.log("Played");
       });
     }

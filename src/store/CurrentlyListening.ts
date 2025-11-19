@@ -4,6 +4,8 @@ import { create } from "zustand";
 interface CurrentlyListeningStore {
   book: Book | null;
   setBook: (book: Book) => void;
+  bookFileLocation: string | null;
+  setBookFileLocation: (bookFileLocation: string | null) => void;
   isPlaying: boolean;
   setIsPlaying: (isPlaying: boolean) => void;
   currentTime: number;
@@ -16,14 +18,15 @@ interface CurrentlyListeningStore {
   setAudioRef: (
     audioRef: React.RefObject<HTMLAudioElement | null> | null
   ) => void;
-  fileUrl: string | null;
-  setFileUrl: (fileUrl: string | null) => void;
+  
 }
 
 export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
   (set) => ({
     book: null as Book | null,
     setBook: (book: Book) => set({ book }),
+    bookFileLocation: null as string | null,
+    setBookFileLocation: (bookFileLocation: string | null) => set({ bookFileLocation }),
     isPlaying: false,
     setIsPlaying: (isPlaying: boolean) => set({ isPlaying }),
     currentTime: 0,
@@ -35,7 +38,5 @@ export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
     audioRef: null as React.RefObject<HTMLAudioElement | null> | null,
     setAudioRef: (audioRef: React.RefObject<HTMLAudioElement | null> | null) =>
       set({ audioRef }),
-    fileUrl: null as string | null,
-    setFileUrl: (fileUrl: string | null) => set({ fileUrl }),
   })
 );
