@@ -71,20 +71,30 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) -> Result<(), String> {
-        // Check if the curren track is already appended to the sink
-        if self.current_track_path.is_some() {
-            if self.sink.as_mut().unwrap().empty() {
-                // Create a new source from the current track and append it to the sink.
-                let file_path = self.current_track_path.as_deref().unwrap();
-                let source = self.create_source(file_path).unwrap();
-
-                self.sink.as_mut().unwrap().append(source);
-                self.sink.as_mut().unwrap().play();
-            } else if self.sink.as_mut().unwrap().is_paused() {
-                self.sink.as_mut().unwrap().play();
-            }
-        } else {
+        let Some(file_path) = self.current_track_path.as_deref() else {
             println!("Current track is not set. Please set the current track first.");
+            return Ok(());
+        };
+
+        // Check state with temporary borrows (these end immediately)
+        let is_empty = self.sink.as_ref().map_or(false, |s| s.empty());
+        let is_paused = self.sink.as_ref().map_or(false, |s| s.is_paused());
+
+        // Create source BEFORE getting mutable sink (only shared borrow needed)
+        let source = if is_empty {
+            Some(self.create_source(file_path)?)
+        } else {
+            None
+        };
+
+        // NOW get mutable access to sink (no conflicting borrows)
+        if let Some(sink) = self.sink.as_mut() {
+            if let Some(source) = source {
+                sink.append(source);
+                sink.play();
+            } else if is_paused {
+                sink.play();
+            }
         }
 
         Ok(())

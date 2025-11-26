@@ -3,17 +3,27 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Button } from "@/components/ui/button"
 import PosterPlaceholder from "@/assets/poster_placeholder.png"
 import { useCurrentlyListeningStore } from "@/store/CurrentlyListening"
+import { invoke } from "@tauri-apps/api/core"
 
 type Props = {
     book: Book
 }
 
 const BookCard = ({ book }: Props) => {
-  const { setBook, setBookFileLocation, bookFileLocation } = useCurrentlyListeningStore()
+  const { setBook, setBookFileLocation, bookFileLocation, isPlaying, setIsPlaying } = useCurrentlyListeningStore()
 
   const handleButtonClick = () => {
     setBook(book)
     setBookFileLocation(book.file_location)
+    if(isPlaying) {
+      invoke("pause").then(() => {
+        setIsPlaying(false)
+      })
+    } else {
+      invoke("play", {bookId: book.id}).then(() => {
+        setIsPlaying(true)
+      })
+    }
   }
 
   console.log(bookFileLocation)
