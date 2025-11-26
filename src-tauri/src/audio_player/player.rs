@@ -67,10 +67,7 @@ impl AudioPlayer {
         Ok(())
     }
 
-    pub fn create_source(
-        &mut self,
-        file_path: &String,
-    ) -> Result<Decoder<BufReader<File>>, String> {
+    pub fn create_source(&self, file_path: &str) -> Result<Decoder<BufReader<File>>, String> {
         let file = File::open(&file_path).map_err(|e| e.to_string())?;
         let audio_buf = BufReader::new(file);
         let source = Decoder::new(audio_buf)
@@ -85,7 +82,7 @@ impl AudioPlayer {
             if self.sink.as_mut().unwrap().empty() {
                 // Create a new source from the current track and append it to the sink.
                 let file_path = self.current_track_path.as_deref().unwrap();
-                let source = self.create_source(&file_path.to_string()).unwrap();
+                let source = self.create_source(file_path).unwrap();
 
                 self.sink.as_mut().unwrap().append(source);
                 self.sink.as_mut().unwrap().play();
