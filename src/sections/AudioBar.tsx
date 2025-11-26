@@ -25,7 +25,7 @@ export default function AudioBar({}: Props) {
       });
     } else {
       if(!bookFileLocation) return;
-      invoke("play", {filePath: bookFileLocation}).then(() => {
+      invoke("play", {bookId: book?.id}).then(() => {
         console.log("Played");
       });
     }

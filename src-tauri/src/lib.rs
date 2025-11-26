@@ -1,9 +1,11 @@
+pub mod audio_player;
 pub mod commands;
 pub mod db;
+pub mod structs;
 pub mod utils;
 
-use commands::{add_book, get_all_books, play, pause};
-use commands::playback::AudioPlayer;
+use audio_player::AudioPlayer;
+use commands::{add_book, get_all_books, pause, play};
 use db::init_db;
 use std::sync::Mutex;
 use tauri::Manager;
@@ -24,7 +26,9 @@ pub fn run() {
 
             // Initialize the audio state
             let mut audio_player = AudioPlayer::new();
-            audio_player.init().expect("Failed to initialize audio player");
+            audio_player
+                .init()
+                .expect("Failed to initialize audio player");
             app.manage(Mutex::new(audio_player));
 
             Ok(())
