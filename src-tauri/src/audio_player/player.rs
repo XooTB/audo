@@ -40,8 +40,6 @@ impl AudioPlayer {
     }
 
     pub fn change_current_track(&mut self, file_path: &str) -> Result<(), String> {
-        let file = File::open(&file_path).map_err(|e| e.to_string())?;
-
         // If the current track path is the same as the new file path, return
         if self.current_track_path.is_some()
             && self.current_track_path.as_ref().unwrap() == file_path
@@ -52,13 +50,9 @@ impl AudioPlayer {
 
         // Otherwise update the current track path
         self.current_track_path = Some(file_path.to_string());
-        let audio_buf = BufReader::new(file);
 
-        // Create the source from the audio buffer
-        let source = Decoder::new(audio_buf)
-            .map_err(|err| format!("Unable to decode the input file!: {:?}", err))?;
-
-        // Set the source to the player
+        // Create a new source from the current track and append it to the sink.
+        let source = self.create_source(file_path).unwrap();
         self.source = Some(source);
 
         // Empty the sink
