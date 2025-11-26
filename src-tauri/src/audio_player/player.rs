@@ -80,14 +80,14 @@ impl AudioPlayer {
         let is_empty = self.sink.as_ref().map_or(false, |s| s.empty());
         let is_paused = self.sink.as_ref().map_or(false, |s| s.is_paused());
 
-        // Create source BEFORE getting mutable sink (only shared borrow needed)
+        // Create a new source if the sink is empty, otherwise use the existing source.
         let source = if is_empty {
             Some(self.create_source(file_path)?)
         } else {
             None
         };
 
-        // NOW get mutable access to sink (no conflicting borrows)
+        // Append the source to the sink and play it if it is not paused.
         if let Some(sink) = self.sink.as_mut() {
             if let Some(source) = source {
                 sink.append(source);
