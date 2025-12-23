@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button"
 import PosterPlaceholder from "@/assets/poster_placeholder.png"
 import { useCurrentlyListeningStore } from "@/store/CurrentlyListening"
 import { invoke } from "@tauri-apps/api/core"
+import { TrashIcon } from "lucide-react"
+import { toast } from "sonner"
+import { useLibraryStore } from "@/store/LibraryStore"
+
 
 type Props = {
     book: Book
@@ -11,7 +15,7 @@ type Props = {
 
 const BookCard = ({ book }: Props) => {
   const { setBook, setBookFileLocation, bookFileLocation, isPlaying, setIsPlaying } = useCurrentlyListeningStore()
-
+  const { deleteBook } = useLibraryStore()
   const handleButtonClick = () => {
     setBook(book)
     setBookFileLocation(book.file_location)
@@ -26,12 +30,19 @@ const BookCard = ({ book }: Props) => {
     }
   }
 
-  console.log(bookFileLocation)
-  console.log(book.file_location)
+  const handleDeleteClick = () => {
+    invoke("delete_book", {bookId: book.id}).then(() => {
+      toast.success("Book deleted")
+      deleteBook(book.id)
+    })
+  }
 
   return (
     <Card key={book.id} className="overflow-hidden">
             <div className="aspect-2/3 relative">
+            <Button variant="outline" className="absolute top-2 right-2" onClick={handleDeleteClick}>
+              <TrashIcon className="w-4 h-4" />
+            </Button>
               <img
                 src={book.cover_image || PosterPlaceholder}
                 alt="Audiobook Cover"

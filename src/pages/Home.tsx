@@ -1,16 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Book } from "@/types/book.d";
 import BookCard from "@/components/BookCard";
+import { useLibraryStore } from "@/store/LibraryStore";
 
 type Props = {};
 
 const Home = ({}: Props) => {
-  const [books, setBooks] = useState<Book[]>([]);
+  const { books, setBooks } = useLibraryStore();
+  console.log(books);
 
   useEffect(() => {
     invoke("get_all_books", {}).then((result) => {
-      setBooks(result as Book[]);
+      setBooks(result as unknown as Book[]);
     });
   }, []);
 

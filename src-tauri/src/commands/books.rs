@@ -19,7 +19,7 @@ pub async fn add_book(
     app: tauri::AppHandle,
     pool: State<'_, Arc<SqlitePool>>,
     file_path: String,
-) -> Result<(), String> {
+) -> Result<Book, String> {
     let metadata = extract_metadata(app, &file_path)
         .await
         .expect("Failed to extract metadata");
@@ -49,7 +49,8 @@ pub async fn add_book(
         return Err("Book already exists".to_string());
     }
 
-    let _result = sqlx::query("INSERT INTO audio_books (name, file_location, cover_image, author, narrator, duration, size) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    let result = sqlx::query_as::<_, Book>(r#"INSERT INTO audio_books (name, file_location, cover_image, author, narrator, duration, size) 
+    VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *"#)
         .bind(book.name)
         .bind(book.file_location)
         .bind(book.cover_image)
@@ -57,7 +58,20 @@ pub async fn add_book(
         .bind(book.narrator)
         .bind(book.duration)
         .bind(book.size)
-        .execute(&**pool).await.map_err(|e| e.to_string())?;
+        .fetch_one(&**pool).await.map_err(|e| e.to_string())?;
+
+    println!("Book added: {:?}", result);
+
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn delete_book(pool: State<'_, Arc<SqlitePool>>, book_id: i32) -> Result<(), String> {
+    let _result = sqlx::query("DELETE FROM audio_books WHERE id = ?")
+        .bind(book_id)
+        .execute(&**pool)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }

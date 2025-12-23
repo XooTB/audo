@@ -2,10 +2,15 @@ import { PlusIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
+import { useLibraryStore } from "@/store/LibraryStore";
+import { toast } from "sonner";
+import { Book } from "@/types/book";
 
 type Props = {};
 
 export default function importBtn({}: Props) {
+  const { addBook } = useLibraryStore();
+
   const handleImport = async () => {
     const filePath = await open({
       multiple: false,
@@ -33,9 +38,14 @@ export default function importBtn({}: Props) {
     if (!filePath) {
       console.error("No file selected");
     } else {
-      console.log("Selected file path:", filePath);
-      // You can now use the file path with your Tauri backend
-      invoke("add_book", { filePath });
+      // Add the book to the database
+      const book: Book = (await invoke("add_book", {
+        filePath,
+      })) as unknown as Book;
+      // Add the book the library store
+      addBook(book);
+      // Show a success toast
+      toast.success("Book added");
     }
   };
 
