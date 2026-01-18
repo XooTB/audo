@@ -52,7 +52,7 @@ impl AudioPlayer {
         self.current_track_path = Some(file_path.to_string());
 
         // Create a new source from the current track and append it to the sink.
-        let source = self.create_source(file_path).unwrap();
+        let source = self.create_source(file_path)?;
         self.source = Some(source);
 
         // Empty the sink
@@ -64,8 +64,19 @@ impl AudioPlayer {
     pub fn create_source(&self, file_path: &str) -> Result<Decoder<BufReader<File>>, String> {
         let file = File::open(&file_path).map_err(|e| e.to_string())?;
         let audio_buf = BufReader::new(file);
-        let source = Decoder::new(audio_buf)
-            .map_err(|err| format!("Unable to decode the input file!: {:?}", err))?;
+        let source = Decoder::new(audio_buf).map_err(|err| {
+            eprintln!("❌ Failed to decode file: {}", file_path);
+            eprintln!("❌ Error: {:?}", err);
+            eprintln!("💡 Tip: Run ffprobe to check the codec:");
+            eprintln!(
+                "   ffprobe -v quiet -print_format json -show_streams \"{}\"",
+                file_path
+            );
+            format!(
+                "Unsupported audio format in file: {}\nError: {:?}",
+                file_path, err
+            )
+        })?;
 
         Ok(source)
     }

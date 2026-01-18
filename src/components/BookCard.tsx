@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import PosterPlaceholder from "@/assets/poster_placeholder.png"
 import { useCurrentlyListeningStore } from "@/store/CurrentlyListening"
 import { invoke } from "@tauri-apps/api/core"
-import { TrashIcon } from "lucide-react"
+import { TrashIcon, InfoIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useLibraryStore } from "@/store/LibraryStore"
 
@@ -48,11 +48,42 @@ const BookCard = ({ book }: Props) => {
     })
   }
 
+  const handleCodecCheck = async () => {
+    try {
+      const codecInfo: any = await invoke("get_audio_codec_info", {
+        filePath: book.file_location,
+      })
+      const infoText =
+        `Codec: ${codecInfo.codec_name} (${codecInfo.codec_long_name})\n` +
+        `Tag: ${codecInfo.codec_tag_string}\n` +
+        `Profile: ${codecInfo.profile || "N/A"}\n` +
+        `Format: ${codecInfo.format_name || "N/A"}\n` +
+        `Sample Rate: ${codecInfo.sample_rate}Hz\n` +
+        `Channels: ${codecInfo.channels}\n` +
+        `Bit Rate: ${codecInfo.bit_rate || "N/A"}`
+
+      toast.info(infoText, { duration: 15000 })
+      console.log("Codec Info:", codecInfo)
+      console.log(infoText)
+    } catch (error) {
+      toast.error(`Failed to get codec info: ${error}`)
+    }
+  }
+
   return (
     <Card key={book.id} className="overflow-hidden">
       <div className="aspect-2/3 relative">
         <Button
           variant="outline"
+          size="icon"
+          className="absolute top-2 left-2"
+          onClick={handleCodecCheck}
+        >
+          <InfoIcon className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
           className="absolute top-2 right-2"
           onClick={handleDeleteClick}
         >
@@ -73,6 +104,7 @@ const BookCard = ({ book }: Props) => {
           variant="outline"
           className="w-full"
           onClick={handleButtonClick}
+          disabled={false}
         >
           {bookFileLocation === book.file_location ? "Listening" : "Listen"}
         </Button>

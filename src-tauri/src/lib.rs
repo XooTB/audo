@@ -9,7 +9,7 @@ use commands::{add_book, delete_book, get_all_books, pause, play};
 use db::init_db;
 use std::sync::Mutex;
 use tauri::Manager;
-use utils::extract_metadata;
+use utils::{extract_metadata, get_audio_codec_info};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -39,6 +39,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_all_books,
             extract_metadata,
+            get_audio_codec_info,
             add_book,
             play,
             pause,
