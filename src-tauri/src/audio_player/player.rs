@@ -5,6 +5,7 @@ pub struct AudioPlayer {
     pub current_track: Option<OutputStream>,
     pub _stream: Option<OutputStream>,
     pub stream_handle: Option<rodio::OutputStream>,
+    pub sinks: Vec<Sink>,
     pub sink: Option<Sink>,
     pub source: Option<Decoder<BufReader<File>>>,
     pub current_track_path: Option<String>,
@@ -12,100 +13,142 @@ pub struct AudioPlayer {
 
 impl AudioPlayer {
     pub fn new() -> Self {
-        Self {
+        AudioPlayer {
             current_track: None,
             _stream: None,
             stream_handle: None,
+            sinks: Vec::new(),
             sink: None,
             source: None,
             current_track_path: None,
         }
     }
 
+    // Initialize the stream (call this before adding sources)
     pub fn init(&mut self) -> Result<(), String> {
-        // Initialize the stream_handle
-        let stream_handle = OutputStreamBuilder::open_default_stream()
-            .map_err(|e| format!("Unable to open default stream: {:?}", e))?;
+        if self._stream.is_none() {
+            self._stream = Some(OutputStreamBuilder::open_default_stream().unwrap());
+        }
+        Ok(())
+    }
 
-        // Set the default stream_handle
-        self.stream_handle = Some(stream_handle);
+    fn stream_initalized(&self) -> bool {
+        self._stream.is_some()
+    }
 
-        // Initialize the sink
-        let sink = Sink::connect_new(&self.stream_handle.as_ref().unwrap().mixer());
+    pub fn change_current_source(
+        &mut self,
+        file_path: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if !self.stream_initalized() {
+            self.init()?;
+        }
 
-        // Add the source to the sink
+        // Get the stream reference
+        let stream = self._stream.as_ref().unwrap();
+
+        // Open the file
+        let file = File::open(file_path)
+            .map_err(|e| format!("Failed to open file '{}': {}", file_path, e))?;
+
+        // Decode the file
+        let source = Decoder::try_from(file)
+            .map_err(|e| format!("Failed to decode audio file '{}': {}. This might be due to unsupported format, corrupted file, or missing codec support.", file_path, e))?;
+
+        // Connect the source to the stream
+        let sink = Sink::connect_new(&stream.mixer());
+        sink.append(source);
+
+        // Set the volume to 1.0
+        sink.set_volume(1.0);
+        sink.pause(); // Start paused
+
         self.sink = Some(sink);
-
         Ok(())
     }
 
-    pub fn change_current_track(&mut self, file_path: &str) -> Result<(), String> {
-        // If the current track path is the same as the new file path, return
-        if self.current_track_path.is_some()
-            && self.current_track_path.as_ref().unwrap() == file_path
-        {
-            println!("Current track path is the same as the new file path, skipping...");
-            return Ok(());
+    // Add a new audio source to the mixer
+    pub fn add_source(&mut self, file_path: &str) -> Result<usize, Box<dyn std::error::Error>> {
+        // Ensure stream is initialized
+        if self._stream.is_none() {
+            self.init()?;
         }
 
-        // Otherwise update the current track path
-        self.current_track_path = Some(file_path.to_string());
+        // Get the stream reference
+        let stream = self._stream.as_ref().unwrap();
 
-        // Create a new source from the current track and append it to the sink.
-        let source = self.create_source(file_path).unwrap();
-        self.source = Some(source);
+        // Open the file
+        let file = File::open(file_path)
+            .map_err(|e| format!("Failed to open file '{}': {}", file_path, e))?;
 
-        // Empty the sink
-        self.sink.as_mut().unwrap().clear();
+        // Decode the file
+        let source = Decoder::try_from(file)
+            .map_err(|e| format!("Failed to decode audio file '{}': {}. This might be due to unsupported format, corrupted file, or missing codec support.", file_path, e))?;
 
-        Ok(())
+        // Connect the source to the stream
+        let sink = Sink::connect_new(&stream.mixer());
+        sink.append(source);
+
+        // Set the volume to 1.0
+        sink.set_volume(1.0);
+        sink.pause(); // Start paused
+
+        let index = self.sinks.len();
+        self.sinks.push(sink);
+        Ok(index)
     }
 
-    pub fn create_source(&self, file_path: &str) -> Result<Decoder<BufReader<File>>, String> {
-        let file = File::open(&file_path).map_err(|e| e.to_string())?;
-        let audio_buf = BufReader::new(file);
-        let source = Decoder::new(audio_buf)
-            .map_err(|err| format!("Unable to decode the input file!: {:?}", err))?;
-
-        Ok(source)
-    }
-
-    pub fn play(&mut self) -> Result<(), String> {
-        let Some(file_path) = self.current_track_path.as_deref() else {
-            println!("Current track is not set. Please set the current track first.");
-            return Ok(());
-        };
-
-        // Check state with temporary borrows (these end immediately)
-        let is_empty = self.sink.as_ref().map_or(false, |s| s.empty());
-        let is_paused = self.sink.as_ref().map_or(false, |s| s.is_paused());
-
-        // Create a new source if the sink is empty, otherwise use the existing source.
-        let source = if is_empty {
-            Some(self.create_source(file_path)?)
-        } else {
-            None
-        };
-
-        // Append the source to the sink and play it if it is not paused.
-        if let Some(sink) = self.sink.as_mut() {
-            if let Some(source) = source {
-                sink.append(source);
-                sink.play();
-            } else if is_paused {
-                sink.play();
-            }
+    // Alternative method to add source using BufReader (for problematic files)
+    pub fn add_source_with_buffer(
+        &mut self,
+        file_path: &str,
+    ) -> Result<usize, Box<dyn std::error::Error>> {
+        // Ensure stream is initialized
+        if self._stream.is_none() {
+            self.init()?;
         }
 
+        // Get the stream reference
+        let stream = self._stream.as_ref().unwrap();
+
+        let file = File::open(file_path)
+            .map_err(|e| format!("Failed to open file '{}': {}", file_path, e))?;
+
+        let buffered_reader = BufReader::new(file);
+        let source = Decoder::try_from(buffered_reader)
+            .map_err(|e| format!("Failed to decode audio file '{}' with buffer: {}. This might be due to unsupported format, corrupted file, or missing codec support.", file_path, e))?;
+
+        let sink = Sink::connect_new(&stream.mixer());
+        sink.append(source);
+        sink.set_volume(1.0);
+        sink.pause(); // Start paused
+
+        let index = self.sinks.len();
+        self.sinks.push(sink);
+        Ok(index)
+    }
+
+    // Remove an audio source from the mixer
+    pub fn remove_source(&mut self, index: usize) -> Result<(), Box<dyn std::error::Error>> {
+        if index < self.sinks.len() {
+            let sink = self.sinks.remove(index);
+            sink.stop();
+        }
         Ok(())
     }
 
-    pub fn pause(&mut self) -> Result<(), String> {
-        if let Some(sink) = self.sink.as_mut() {
+    // Play a specific source
+    pub fn play(&self, index: usize) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(sink) = self.sinks.get(index) {
+            sink.play();
+        }
+        Ok(())
+    }
+
+    // Pause a specific source
+    pub fn pause(&self, index: usize) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(sink) = self.sinks.get(index) {
             sink.pause();
-            println!("Sink paused!");
-        } else {
-            return Err("No sink found".to_string());
         }
         Ok(())
     }
