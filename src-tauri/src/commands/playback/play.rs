@@ -17,15 +17,15 @@ pub async fn play(
 
     // Get the audio player from the state
     let mut player = audio_player.lock().unwrap();
-
+    
     // Check if the book is already loaded into the player.
     if player.current_track_path.is_some()
-        && player.current_track_path.as_ref().unwrap() == &book.file_location
+    && player.current_track_path.as_ref().unwrap() == &book.file_location
     {
         player.play().map_err(|e| e.to_string())?;
         return Ok(());
     }
-
+    
     // Otherwise, load the book into the player.
     player
         .change_current_track(&book.file_location)

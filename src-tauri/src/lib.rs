@@ -24,7 +24,7 @@ pub fn run() {
                 app_handle.manage(pool);
             });
 
-            // Initialize the audio state
+            // Initialize the Player
             let mut audio_player = AudioPlayer::new();
             audio_player
                 .init()
