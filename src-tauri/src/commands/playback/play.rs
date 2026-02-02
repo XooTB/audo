@@ -40,7 +40,7 @@ pub async fn play(
 
 #[tauri::command]
 pub async fn pause(audio_player: tauri::State<'_, Mutex<AudioPlayer>>) -> Result<(), String> {
-    let mut audio_player = audio_player.lock().unwrap();
+    let audio_player = audio_player.lock().unwrap();
     // Pause the audio
     audio_player.pause().map_err(|e| e.to_string())?;
 
