@@ -22,17 +22,18 @@ pub async fn play(
     if player.current_track_path.is_some()
         && player.current_track_path.as_ref().unwrap() == &book.file_location
     {
-        player.play(0).map_err(|e| e.to_string())?;
+        println!("book is already loaded into the player! Playing it...");
+        player.play().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
     // Otherwise, load the book into the player.
     player
-        .change_current_source(&book.file_location)
+        .change_current_source(&book.file_location, book.id.unwrap().clone())
         .map_err(|e| e.to_string())?;
 
     // And then, play the audio.
-    player.play(0).map_err(|e| e.to_string())?;
+    player.play().map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -41,7 +42,7 @@ pub async fn play(
 pub async fn pause(audio_player: tauri::State<'_, Mutex<AudioPlayer>>) -> Result<(), String> {
     let mut audio_player = audio_player.lock().unwrap();
     // Pause the audio
-    audio_player.pause(0).map_err(|e| e.to_string())?;
+    audio_player.pause().map_err(|e| e.to_string())?;
 
     Ok(())
 }
