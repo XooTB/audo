@@ -7,4 +7,5 @@ export type Book = {
   narrator: string;
   duration: number;
   size: number;
+  description?: string;
 };

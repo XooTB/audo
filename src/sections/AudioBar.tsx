@@ -11,8 +11,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import placeholder from "@/assets/player_placeholder.png";
-import { useCurrentlyListeningStore } from "@/store/CurrentlyListening";
-import { invoke } from "@tauri-apps/api/core";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useState } from "react";
 import {
   Sheet,
@@ -23,49 +22,47 @@ import {
 type Props = {};
 
 export default function AudioBar({}: Props) {
-  const { book, bookFileLocation, isPlaying, setIsPlaying, currentTime, duration, audioRef } =
-    useCurrentlyListeningStore();
-  const [volume, setVolume] = useState([100]);
+  const {
+    book,
+    bookFileLocation,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    play,
+    pause,
+    setVolume,
+    skipBackward,
+    skipForward,
+    seek,
+  } = useAudioPlayer();
+  
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    if(isPlaying) {
-      invoke("pause").then(() => {
-        console.log("Paused");
-      });
+  const handlePlayPause = async () => {
+    if (!book) return;
+    
+    if (isPlaying) {
+      await pause();
     } else {
-      if(!bookFileLocation) return;
-      invoke("play", {bookId: book?.id}).then(() => {
-        console.log("Played");
-      });
+      await play(book.id);
     }
   };
 
   const handleSkipBackward = () => {
-    if (audioRef?.current) {
-      audioRef.current.currentTime = Math.max(
-        0,
-        audioRef.current.currentTime - 10
-      );
-    }
+    skipBackward(10);
   };
 
   const handleSkipForward = () => {
-    if (audioRef?.current) {
-      audioRef.current.currentTime = Math.min(
-        audioRef.current.duration,
-        audioRef.current.currentTime + 30
-      );
-    }
+    skipForward(30);
   };
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (audioRef?.current && duration) {
+    if (duration) {
       const rect = e.currentTarget.getBoundingClientRect();
       const percent = (e.clientX - rect.left) / rect.width;
       const newTime = percent * duration;
-      audioRef.current.currentTime = newTime;
+      seek(newTime);
     }
   };
 
@@ -112,7 +109,8 @@ export default function AudioBar({}: Props) {
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleSkipBackward}
-                  disabled={!bookFileLocation}
+                  disabled={true}
+                  title="Skip backward not yet supported"
                 >
                   <SkipBack className="h-4 w-4" />
                 </Button>
@@ -133,7 +131,8 @@ export default function AudioBar({}: Props) {
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleSkipForward}
-                  disabled={!bookFileLocation}
+                  disabled={true}
+                  title="Skip forward not yet supported"
                 >
                   <SkipForward className="h-4 w-4" />
                 </Button>
@@ -153,14 +152,14 @@ export default function AudioBar({}: Props) {
 
             {/* Volume Control */}
             <div className="flex items-center gap-2 min-w-[140px] justify-end">
-              {volume[0] === 0 ? (
+              {volume === 0 ? (
                 <VolumeX className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <Volume2 className="h-4 w-4 text-muted-foreground" />
               )}
               <Slider
-                value={volume}
-                onValueChange={setVolume}
+                value={[volume]}
+                onValueChange={(value) => setVolume(value[0])}
                 max={100}
                 step={1}
                 className="w-24"
@@ -240,7 +239,8 @@ export default function AudioBar({}: Props) {
                       size="icon"
                       className="h-14 w-14"
                       onClick={handleSkipBackward}
-                      disabled={!bookFileLocation}
+                      disabled={true}
+                      title="Skip backward not yet supported"
                     >
                       <SkipBack className="h-6 w-6" />
                     </Button>
@@ -261,21 +261,22 @@ export default function AudioBar({}: Props) {
                       size="icon"
                       className="h-14 w-14"
                       onClick={handleSkipForward}
-                      disabled={!bookFileLocation}
+                      disabled={true}
+                      title="Skip forward not yet supported"
                     >
                       <SkipForward className="h-6 w-6" />
                     </Button>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {volume[0] === 0 ? (
+                    {volume === 0 ? (
                       <VolumeX className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     ) : (
                       <Volume2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     )}
                     <Slider
-                      value={volume}
-                      onValueChange={setVolume}
+                      value={[volume]}
+                      onValueChange={(value) => setVolume(value[0])}
                       max={100}
                       step={1}
                       className="flex-1"

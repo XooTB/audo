@@ -165,4 +165,15 @@ impl AudioPlayer {
         }
         Ok(())
     }
+
+    pub fn get_current_timestamp(&self) -> Result<u64, Box<dyn std::error::Error>> {
+        if let Some(sink) = &self.sink {
+            let current_timestamp = sink.get_pos();
+            return Ok(current_timestamp.as_secs());
+        }
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No sink found",
+        )))
+    }
 }

@@ -14,11 +14,10 @@ interface CurrentlyListeningStore {
   setDuration: (duration: number) => void;
   progress: number;
   setProgress: (progress: number) => void;
-  audioRef: React.RefObject<HTMLAudioElement | null> | null;
-  setAudioRef: (
-    audioRef: React.RefObject<HTMLAudioElement | null> | null
-  ) => void;
-  
+  volume: number;
+  setVolume: (volume: number) => void;
+  error: string | null;
+  setError: (error: string | null) => void;
 }
 
 export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
@@ -35,8 +34,9 @@ export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
     setDuration: (duration: number) => set({ duration }),
     progress: 0,
     setProgress: (progress: number) => set({ progress }),
-    audioRef: null as React.RefObject<HTMLAudioElement | null> | null,
-    setAudioRef: (audioRef: React.RefObject<HTMLAudioElement | null> | null) =>
-      set({ audioRef }),
+    volume: 100,
+    setVolume: (volume: number) => set({ volume }),
+    error: null as string | null,
+    setError: (error: string | null) => set({ error }),
   })
 );

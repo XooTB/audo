@@ -46,3 +46,17 @@ pub async fn pause(audio_player: tauri::State<'_, Mutex<AudioPlayer>>) -> Result
 
     Ok(())
 }
+
+#[tauri::command]
+pub async fn get_current_timestamp(
+    audio_player: tauri::State<'_, Mutex<AudioPlayer>>,
+) -> Result<u64, String> {
+    let audio_player = audio_player.lock().unwrap();
+    let current_timestamp = audio_player
+        .get_current_timestamp()
+        .map_err(|e| e.to_string())?;
+
+    println!("Current timestamp: {}", current_timestamp);
+
+    Ok(current_timestamp)
+}

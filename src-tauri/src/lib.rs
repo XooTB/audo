@@ -5,7 +5,7 @@ pub mod structs;
 pub mod utils;
 
 use audio_player::AudioPlayer;
-use commands::{add_book, get_all_books, pause, play};
+use commands::{add_book, get_all_books, get_current_timestamp, pause, play};
 use db::init_db;
 use std::sync::Mutex;
 use tauri::Manager;
@@ -42,6 +42,7 @@ pub fn run() {
             add_book,
             play,
             pause,
+            get_current_timestamp,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

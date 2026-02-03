@@ -1,65 +1,164 @@
 import { Book } from "@/types/book"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import PosterPlaceholder from "@/assets/poster_placeholder.png"
-import { useCurrentlyListeningStore } from "@/store/CurrentlyListening"
-import { invoke } from "@tauri-apps/api/core"
-import { Play, Pause } from "lucide-react"
+import { useAudioPlayer } from "@/hooks/useAudioPlayer"
+import { Play, Pause, Clock, User, Mic } from "lucide-react"
+import { useState } from "react"
 
 type Props = {
     book: Book
 }
 
 const BookCard = ({ book }: Props) => {
-  const { setBook, setBookFileLocation, bookFileLocation, isPlaying, setIsPlaying } = useCurrentlyListeningStore()
+  const {
+    bookFileLocation,
+    isPlaying,
+    play,
+    pause,
+    setBook,
+    setBookFileLocation,
+    setDuration,
+  } = useAudioPlayer()
+  
+  const [showModal, setShowModal] = useState(false)
 
-  const handleButtonClick = () => {
-    setBook(book)
-    setBookFileLocation(book.file_location)
-    if(isPlaying) {
-      invoke("pause").then(() => {
-        setIsPlaying(false)
-      })
+  const handleButtonClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    const isCurrentBook = bookFileLocation === book.file_location
+    
+    if (isCurrentBook && isPlaying) {
+      // Pause current book
+      await pause()
     } else {
-      invoke("play", {bookId: book.id}).then(() => {
-        setIsPlaying(true)
-      })
+      // Play this book (set book info first, then play)
+      setBook(book)
+      setBookFileLocation(book.file_location)
+      setDuration(book.duration)
+      await play(book.id)
     }
   }
 
   const isCurrentBook = bookFileLocation === book.file_location
 
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    return `${hours}h ${minutes}m`
+  }
+
   return (
-    <Card key={book.id} className="group overflow-hidden border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg">
-      <div className="relative aspect-[2/3] overflow-hidden bg-muted">
+    <>
+      <div className="group cursor-pointer" onClick={() => setShowModal(true)}>
+      <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-muted mb-3 shadow-md">
         <img
           src={book.cover_image || PosterPlaceholder}
           alt={book.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-          <Button
-            size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 h-12 w-12 rounded-full shadow-lg"
-            onClick={handleButtonClick}
-          >
-            {isCurrentBook && isPlaying ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Play className="h-5 w-5 ml-0.5" />
-            )}
-          </Button>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="absolute bottom-3 right-3">
+            <Button
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-xl bg-primary hover:bg-primary/90 hover:scale-105 transition-transform"
+              onClick={handleButtonClick}
+            >
+              {isCurrentBook && isPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+              ) : (
+                <Play className="h-5 w-5 ml-0.5 fill-current" />
+              )}
+            </Button>
+          </div>
         </div>
+        {isCurrentBook && (
+          <div className="absolute top-2 right-2">
+            <div className="bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-1 rounded-full">
+              {isPlaying ? "Playing" : "Paused"}
+            </div>
+          </div>
+        )}
       </div>
-      <div className="p-4 space-y-1">
-        <h3 className="font-semibold text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
+      <div className="space-y-1 px-1">
+        <h3 className="font-medium text-sm leading-snug line-clamp-2">
           {book.name}
         </h3>
         <p className="text-xs text-muted-foreground line-clamp-1">
           {book.author}
         </p>
       </div>
-    </Card>
+    </div>
+
+    <Dialog open={showModal} onOpenChange={setShowModal}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">{book.name}</DialogTitle>
+          <DialogDescription>
+            <div className="flex gap-6 mt-6">
+              <div className="flex-shrink-0">
+                <img
+                  src={book.cover_image || PosterPlaceholder}
+                  alt={book.name}
+                  className="w-40 h-60 object-cover rounded-md shadow-lg"
+                />
+              </div>
+              <div className="flex-1 space-y-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-foreground">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Author:</span>
+                    <span>{book.author}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Mic className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Narrator:</span>
+                    <span>{book.narrator}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Duration:</span>
+                    <span>{formatDuration(book.duration)}</span>
+                  </div>
+                </div>
+
+                {book.description && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold text-sm text-foreground mb-2">Description</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {book.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="pt-4">
+                  <Button 
+                    className="w-full"
+                    onClick={(e) => {
+                      handleButtonClick(e)
+                      setShowModal(false)
+                    }}
+                  >
+                    {isCurrentBook && isPlaying ? (
+                      <>
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Play
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 
