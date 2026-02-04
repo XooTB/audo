@@ -1,4 +1,4 @@
-use crate::structs::Book;
+use crate::models::Book;
 use sqlx::SqlitePool;
 
 pub async fn fetch_book(pool: &SqlitePool, book_id: i32) -> Result<Book, String> {

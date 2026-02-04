@@ -1,12 +1,12 @@
 pub mod audio_player;
 pub mod commands;
-pub mod db;
-pub mod structs;
+pub mod database;
+pub mod models;
 pub mod utils;
 
 use audio_player::AudioPlayer;
-use commands::{add_book, get_all_books, get_current_timestamp, pause, play};
-use db::init_db;
+use commands::*;
+use database::init_db;
 use std::sync::Mutex;
 use tauri::Manager;
 use utils::extract_metadata;

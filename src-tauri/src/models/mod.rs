@@ -1,3 +1,3 @@
-pub mod book;
+mod book;
 
 pub use book::Book;

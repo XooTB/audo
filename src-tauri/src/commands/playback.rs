@@ -1,5 +1,5 @@
 use crate::audio_player::AudioPlayer;
-use crate::db::fetch::fetch_book;
+use crate::database::fetch_book;
 use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
 use tauri::State;

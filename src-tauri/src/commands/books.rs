@@ -1,4 +1,4 @@
-use crate::structs::book::Book;
+use crate::models::Book;
 use crate::utils::extract_metadata;
 use sqlx::SqlitePool;
 use std::sync::Arc;
