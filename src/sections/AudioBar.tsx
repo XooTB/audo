@@ -109,8 +109,7 @@ export default function AudioBar({}: Props) {
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleSkipBackward}
-                  disabled={true}
-                  title="Skip backward not yet supported"
+                  disabled={!bookFileLocation}
                 >
                   <SkipBack className="h-4 w-4" />
                 </Button>
@@ -131,8 +130,7 @@ export default function AudioBar({}: Props) {
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleSkipForward}
-                  disabled={true}
-                  title="Skip forward not yet supported"
+                  disabled={!bookFileLocation}
                 >
                   <SkipForward className="h-4 w-4" />
                 </Button>

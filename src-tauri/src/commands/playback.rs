@@ -60,3 +60,13 @@ pub async fn get_current_timestamp(
 
     Ok(current_timestamp)
 }
+
+#[tauri::command]
+pub async fn seek(
+    audio_player: tauri::State<'_, Mutex<AudioPlayer>>,
+    position: f64,
+) -> Result<(), String> {
+    let player = audio_player.lock().unwrap();
+    player.seek(position).map_err(|e| e.to_string())?;
+    Ok(())
+}

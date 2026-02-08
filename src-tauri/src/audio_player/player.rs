@@ -1,5 +1,5 @@
 use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
-use std::{fs::File, io::BufReader};
+use std::{fs::File, io::BufReader, time::Duration};
 
 pub struct AudioPlayer {
     pub current_track_id: Option<i32>,
@@ -170,6 +170,28 @@ impl AudioPlayer {
         if let Some(sink) = &self.sink {
             let current_timestamp = sink.get_pos();
             return Ok(current_timestamp.as_secs());
+        }
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No sink found",
+        )))
+    }
+
+    pub fn get_current_timestamp_f64(&self) -> Result<f64, Box<dyn std::error::Error>> {
+        if let Some(sink) = &self.sink {
+            let current_timestamp = sink.get_pos();
+            return Ok(current_timestamp.as_secs_f64());
+        }
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No sink found",
+        )))
+    }
+
+    pub fn seek(&self, position_secs: f64) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(sink) = &self.sink {
+            sink.try_seek(Duration::from_secs_f64(position_secs))?;
+            return Ok(());
         }
         Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
