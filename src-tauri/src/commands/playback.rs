@@ -56,7 +56,7 @@ pub async fn get_current_timestamp(
         .get_current_timestamp()
         .map_err(|e| e.to_string())?;
 
-    println!("Current timestamp: {}", current_timestamp);
+    dbg!(&current_timestamp);
 
     Ok(current_timestamp)
 }
@@ -68,5 +68,15 @@ pub async fn seek(
 ) -> Result<(), String> {
     let player = audio_player.lock().unwrap();
     player.seek(position).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_volume(
+    audio_player: tauri::State<'_, Mutex<AudioPlayer>>,
+    volume: f32,
+) -> Result<(), String> {
+    let mut player = audio_player.lock().unwrap();
+    player.set_volume(volume);
     Ok(())
 }

@@ -62,6 +62,7 @@ pub fn run() {
             pause,
             get_current_timestamp,
             seek,
+            set_volume,
             save_playback_progress,
             get_playback_progress,
             get_last_listened,

@@ -174,10 +174,17 @@ export function useAudioPlayer() {
 
   /**
    * Set volume (0-100)
+   * Converts to 0.0-1.0 for the backend
    */
   const handleSetVolume = useCallback(
-    (newVolume: number) => {
-      setVolume(Math.max(0, Math.min(100, newVolume)));
+    async (newVolume: number) => {
+      const clamped = Math.max(0, Math.min(100, newVolume));
+      setVolume(clamped);
+      try {
+        await invoke("set_volume", { volume: clamped / 100 });
+      } catch (err) {
+        console.error("Set volume error:", err);
+      }
     },
     [setVolume]
   );

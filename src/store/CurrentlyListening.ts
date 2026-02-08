@@ -34,7 +34,7 @@ export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
     setDuration: (duration: number) => set({ duration }),
     progress: 0,
     setProgress: (progress: number) => set({ progress }),
-    volume: 100,
+    volume: 50,
     setVolume: (volume: number) => set({ volume }),
     error: null as string | null,
     setError: (error: string | null) => set({ error }),
