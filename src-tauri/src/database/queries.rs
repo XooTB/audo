@@ -46,6 +46,19 @@ pub async fn get_progress(pool: &SqlitePool, book_id: i32) -> Result<Option<Play
     Ok(progress)
 }
 
+pub async fn fetch_book_by_content_id(
+    pool: &SqlitePool,
+    content_id: &str,
+) -> Result<Option<Book>, String> {
+    let book = sqlx::query_as::<_, Book>("SELECT * FROM audio_books WHERE content_id = ?")
+        .bind(content_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| format!("Failed to fetch book by content_id: {}", e))?;
+
+    Ok(book)
+}
+
 pub async fn get_last_listened_book(pool: &SqlitePool) -> Result<Option<(Book, PlaybackProgress)>, String> {
     let progress = sqlx::query_as::<_, PlaybackProgress>(
         "SELECT * FROM playback_progress ORDER BY last_listened_at DESC LIMIT 1",

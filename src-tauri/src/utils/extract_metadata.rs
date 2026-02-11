@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tauri_plugin_shell::ShellExt;
 
+use super::content_id::generate_content_id;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Metadata {
     pub title: String,
@@ -11,6 +13,10 @@ pub struct Metadata {
     pub size: String,
     pub description: String,
     pub date: String,
+    pub asin: Option<String>,
+    pub isbn: Option<String>,
+    pub content_id: Option<String>,
+    pub identity_method: Option<String>,
 }
 
 // Structs to parse ffprobe JSON output
@@ -39,6 +45,10 @@ struct Tags {
     description: Option<String>,
     comment: Option<String>,
     album_artist: Option<String>,
+    #[serde(alias = "ASIN")]
+    asin: Option<String>,
+    #[serde(alias = "ISBN")]
+    isbn: Option<String>,
 }
 
 #[tauri::command]
@@ -62,20 +72,27 @@ pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<
     // Extract metadata from ffprobe output
     let tags = ffprobe_data.format.tags.as_ref();
 
+    let title = tags
+        .and_then(|t| t.title.clone())
+        .unwrap_or_else(|| "Unknown".to_string());
+    let author = tags
+        .and_then(|t| t.artist.clone().or_else(|| t.album_artist.clone()))
+        .unwrap_or_else(|| "Unknown".to_string());
+    let duration_str = ffprobe_data
+        .format
+        .duration
+        .unwrap_or_else(|| "Unknown".to_string());
+
+    let duration_f64 = duration_str.parse::<f64>().unwrap_or(0.0);
+    let identity = generate_content_id(&title, &author, duration_f64);
+
     let metadata = Metadata {
-        title: tags
-            .and_then(|t| t.title.clone())
-            .unwrap_or_else(|| "Unknown".to_string()),
-        author: tags
-            .and_then(|t| t.artist.clone().or_else(|| t.album_artist.clone()))
-            .unwrap_or_else(|| "Unknown".to_string()),
+        title,
+        author,
         narrator: tags
             .and_then(|t| t.composer.clone())
             .unwrap_or_else(|| "Unknown".to_string()),
-        duration: ffprobe_data
-            .format
-            .duration
-            .unwrap_or_else(|| "Unknown".to_string()),
+        duration: duration_str,
         size: ffprobe_data
             .format
             .size
@@ -90,7 +107,13 @@ pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<
         description: tags
             .and_then(|t| t.description.clone().or_else(|| t.comment.clone()))
             .unwrap_or_else(|| "Unknown".to_string()),
+        asin: tags.and_then(|t| t.asin.clone()),
+        isbn: tags.and_then(|t| t.isbn.clone()),
+        content_id: identity.content_id,
+        identity_method: identity.identity_method,
     };
+
+    println!("Metadata: {:?}", &metadata);
 
     Ok(metadata)
 }

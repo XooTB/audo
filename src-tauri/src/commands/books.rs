@@ -35,6 +35,10 @@ pub async fn add_book(
         size: metadata.size.parse::<i32>().unwrap_or(0),
         created_at: None,
         updated_at: None,
+        content_id: metadata.content_id,
+        identity_method: metadata.identity_method,
+        asin: metadata.asin,
+        isbn: metadata.isbn,
     };
 
     // Check if book already exists
@@ -49,7 +53,7 @@ pub async fn add_book(
         return Err("Book already exists".to_string());
     }
 
-    let _result = sqlx::query("INSERT INTO audio_books (name, file_location, cover_image, author, narrator, duration, size) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    let _result = sqlx::query("INSERT INTO audio_books (name, file_location, cover_image, author, narrator, duration, size, content_id, identity_method, asin, isbn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(book.name)
         .bind(book.file_location)
         .bind(book.cover_image)
@@ -57,6 +61,10 @@ pub async fn add_book(
         .bind(book.narrator)
         .bind(book.duration)
         .bind(book.size)
+        .bind(book.content_id)
+        .bind(book.identity_method)
+        .bind(book.asin)
+        .bind(book.isbn)
         .execute(&**pool).await.map_err(|e| e.to_string())?;
 
     Ok(())

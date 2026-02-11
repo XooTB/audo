@@ -13,4 +13,8 @@ pub struct Book {
     pub size: i32,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
+    pub content_id: Option<String>,
+    pub identity_method: Option<String>,
+    pub asin: Option<String>,
+    pub isbn: Option<String>,
 }

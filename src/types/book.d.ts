@@ -8,4 +8,8 @@ export type Book = {
   duration: number;
   size: number;
   description?: string;
+  content_id: string | null;
+  identity_method: string | null;
+  asin: string | null;
+  isbn: string | null;
 };

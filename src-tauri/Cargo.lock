@@ -278,6 +278,7 @@ dependencies = [
  "rodio",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "tauri",
  "tauri-build",
