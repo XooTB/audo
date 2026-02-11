@@ -146,7 +146,14 @@ pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<
         .shell()
         .sidecar("ffprobe")
         .unwrap()
-        .args(&["-v", "quiet", "-print_format", "json", "-show_format"])
+        .args(&[
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_chapters",
+        ])
         .arg(file_path);
 
     let output = command.output().await.map_err(|e| e.to_string())?;
