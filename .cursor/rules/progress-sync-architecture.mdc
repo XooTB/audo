@@ -1,0 +1,24 @@
+---
+description: "Progress sync architecture"
+alwaysApply: false
+applyIntelligently: true
+---
+
+# Progress Sync Architecture
+
+Audo supports cross-device progress synchronization through a central service:
+
+- **Central sync service**: Remote server that stores user progress data
+- **Authentication**: Users must sign up and log in to enable sync
+- **Manual file management**: Users are responsible for copying audiobook files to each device
+- **Automatic sync**: Progress syncs to the service when internet is available
+- **Device-specific libraries**: Each device maintains its own local library; the cloud only stores progress, not files
+- **Sync requirement**: A book must be imported into a device's local library to receive synced progress for that book
+
+The device library and cloud library are independent—sync only updates progress for books that exist locally.
+
+
+# Sync Priority
+
+- Use a local-first sync approach, that means we always sync the local sqlite database first before prompting the remote-server to sync up. 
+- On app-launch always prioritze the latest updated progress. If the local server has a newer timestamp, we use that.
