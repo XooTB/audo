@@ -160,6 +160,5 @@ pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<
     let stdout = String::from_utf8(output.stdout).map_err(|e| e.to_string())?;
 
     let metadata = parse_ffprobe_output(&stdout)?;
-    println!("Metadata: {:?}", &metadata);
     Ok(metadata)
 }

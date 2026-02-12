@@ -1,4 +1,5 @@
-use crate::models::{Book, PlaybackProgress};
+use crate::models::{Book, Chapter, PlaybackProgress};
+use crate::utils::extract_metadata::Chapter as MetadataChapter;
 use sqlx::SqlitePool;
 
 pub async fn fetch_book(pool: &SqlitePool, book_id: i32) -> Result<Book, String> {
@@ -57,6 +58,57 @@ pub async fn fetch_book_by_content_id(
         .map_err(|e| format!("Failed to fetch book by content_id: {}", e))?;
 
     Ok(book)
+}
+
+pub async fn save_chapters(
+    pool: &SqlitePool,
+    book_id: i32,
+    chapters: &[MetadataChapter],
+) -> Result<(), String> {
+    if chapters.is_empty() {
+        return Ok(());
+    }
+
+    for chapter in chapters {
+        let start_time: f64 = chapter
+            .start_time
+            .parse()
+            .map_err(|e| format!("Failed to parse start_time: {}", e))?;
+        let end_time: f64 = chapter
+            .end_time
+            .parse()
+            .map_err(|e| format!("Failed to parse end_time: {}", e))?;
+
+        sqlx::query(
+            "INSERT INTO chapters (book_id, chapter_index, start_time, end_time, title)
+             VALUES (?, ?, ?, ?, ?)",
+        )
+        .bind(book_id)
+        .bind(chapter.id)
+        .bind(start_time)
+        .bind(end_time)
+        .bind(&chapter.title)
+        .execute(pool)
+        .await
+        .map_err(|e| format!("Failed to save chapter: {}", e))?;
+    }
+
+    Ok(())
+}
+
+pub async fn get_chapters_for_book(
+    pool: &SqlitePool,
+    book_id: i32,
+) -> Result<Vec<Chapter>, String> {
+    let chapters = sqlx::query_as::<_, Chapter>(
+        "SELECT * FROM chapters WHERE book_id = ? ORDER BY chapter_index ASC",
+    )
+    .bind(book_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| format!("Failed to get chapters: {}", e))?;
+
+    Ok(chapters)
 }
 
 pub async fn get_last_listened_book(pool: &SqlitePool) -> Result<Option<(Book, PlaybackProgress)>, String> {

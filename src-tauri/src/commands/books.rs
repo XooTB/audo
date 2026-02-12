@@ -1,4 +1,5 @@
-use crate::models::Book;
+use crate::database::{get_chapters_for_book, save_chapters};
+use crate::models::{Book, Chapter};
 use crate::utils::extract_metadata;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -53,7 +54,7 @@ pub async fn add_book(
         return Err("Book already exists".to_string());
     }
 
-    let _result = sqlx::query("INSERT INTO audio_books (name, file_location, cover_image, author, narrator, duration, size, content_id, identity_method, asin, isbn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    let result = sqlx::query("INSERT INTO audio_books (name, file_location, cover_image, author, narrator, duration, size, content_id, identity_method, asin, isbn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(book.name)
         .bind(book.file_location)
         .bind(book.cover_image)
@@ -67,5 +68,16 @@ pub async fn add_book(
         .bind(book.isbn)
         .execute(&**pool).await.map_err(|e| e.to_string())?;
 
+    let book_id = result.last_insert_rowid() as i32;
+    save_chapters(&pool, book_id, &metadata.chapters).await?;
+
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_chapters(
+    pool: State<'_, Arc<SqlitePool>>,
+    book_id: i32,
+) -> Result<Vec<Chapter>, String> {
+    get_chapters_for_book(&**pool, book_id).await
 }
