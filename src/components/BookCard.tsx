@@ -3,14 +3,17 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import PosterPlaceholder from "@/assets/poster_placeholder.png"
 import { useAudioPlayer } from "@/hooks/useAudioPlayer"
-import { Play, Pause, Clock, User, Mic } from "lucide-react"
+import { useCurrentlyListeningStore } from "@/store/CurrentlyListening"
+import { invoke } from "@tauri-apps/api/core"
+import { Play, Pause, Clock, User, Mic, Trash2 } from "lucide-react"
 import { useState } from "react"
 
 type Props = {
     book: Book
+    onRemove?: (bookId: number) => void
 }
 
-const BookCard = ({ book }: Props) => {
+const BookCard = ({ book, onRemove }: Props) => {
   const {
     bookFileLocation,
     isPlaying,
@@ -21,7 +24,9 @@ const BookCard = ({ book }: Props) => {
     setDuration,
   } = useAudioPlayer()
   
+  const clearPlayer = useCurrentlyListeningStore((s) => s.clearPlayer)
   const [showModal, setShowModal] = useState(false)
+  const [confirmingRemove, setConfirmingRemove] = useState(false)
 
   const handleButtonClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -90,7 +95,7 @@ const BookCard = ({ book }: Props) => {
       </div>
     </div>
 
-    <Dialog open={showModal} onOpenChange={setShowModal}>
+    <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) setConfirmingRemove(false); }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl">{book.name}</DialogTitle>
@@ -131,8 +136,8 @@ const BookCard = ({ book }: Props) => {
                   </div>
                 )}
 
-                <div className="pt-4">
-                  <Button 
+                <div className="pt-4 space-y-2">
+                  <Button
                     className="w-full"
                     onClick={(e) => {
                       handleButtonClick(e)
@@ -151,6 +156,33 @@ const BookCard = ({ book }: Props) => {
                       </>
                     )}
                   </Button>
+                  {confirmingRemove ? (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={async () => {
+                        await invoke("remove_book", { bookId: book.id })
+                        if (isCurrentBook) {
+                          clearPlayer()
+                        }
+                        onRemove?.(book.id!)
+                        setShowModal(false)
+                        setConfirmingRemove(false)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Confirm Removal
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full text-destructive hover:text-destructive"
+                      onClick={() => setConfirmingRemove(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove from Library
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

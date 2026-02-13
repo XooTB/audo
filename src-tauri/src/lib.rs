@@ -67,6 +67,7 @@ pub fn run() {
             get_playback_progress,
             get_last_listened,
             get_chapters,
+            remove_book,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

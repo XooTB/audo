@@ -1,8 +1,9 @@
+use crate::audio_player::AudioPlayer;
 use crate::database::{get_chapters_for_book, save_chapters};
 use crate::models::{Book, Chapter};
 use crate::utils::extract_metadata;
 use sqlx::SqlitePool;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::State;
 
 #[tauri::command]
@@ -70,6 +71,31 @@ pub async fn add_book(
 
     let book_id = result.last_insert_rowid() as i32;
     save_chapters(&pool, book_id, &metadata.chapters).await?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn remove_book(
+    audio_player: tauri::State<'_, Mutex<AudioPlayer>>,
+    pool: State<'_, Arc<SqlitePool>>,
+    book_id: i32,
+) -> Result<(), String> {
+    // If this book is currently loaded in the player, stop playback
+    {
+        let mut player = audio_player.lock().unwrap();
+        if player.get_current_track_id() == Some(book_id) {
+            player.remove_source().map_err(|e| e.to_string())?;
+            player.current_track_id = None;
+            player.current_track_path = None;
+        }
+    }
+
+    sqlx::query("DELETE FROM audio_books WHERE id = ?")
+        .bind(book_id)
+        .execute(&**pool)
+        .await
+        .map_err(|e| format!("Failed to remove book: {}", e))?;
 
     Ok(())
 }

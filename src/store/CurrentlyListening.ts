@@ -5,6 +5,7 @@ import { create } from "zustand";
 interface CurrentlyListeningStore {
   book: Book | null;
   setBook: (book: Book) => void;
+  clearPlayer: () => void;
   bookFileLocation: string | null;
   setBookFileLocation: (bookFileLocation: string | null) => void;
   isPlaying: boolean;
@@ -29,6 +30,17 @@ export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
   (set) => ({
     book: null as Book | null,
     setBook: (book: Book) => set({ book }),
+    clearPlayer: () => set({
+      book: null,
+      bookFileLocation: null,
+      isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+      progress: 0,
+      error: null,
+      chapters: [],
+      currentChapter: null,
+    }),
     bookFileLocation: null as string | null,
     setBookFileLocation: (bookFileLocation: string | null) => set({ bookFileLocation }),
     isPlaying: false,
