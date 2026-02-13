@@ -18,6 +18,13 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Props = {};
 
@@ -35,6 +42,9 @@ export default function AudioBar({}: Props) {
     skipBackward,
     skipForward,
     seek,
+    chapters,
+    currentChapter,
+    seekToChapter,
   } = useAudioPlayer();
   
   const [isExpanded, setIsExpanded] = useState(false);
@@ -57,10 +67,27 @@ export default function AudioBar({}: Props) {
     skipForward(30);
   };
 
+  const handleChapterSelect = (value: string) => {
+    seekToChapter(parseInt(value, 10));
+  };
+
+  const hasChapters = chapters.length > 0 && currentChapter !== null;
+
+  const displayProgress = hasChapters
+    ? ((currentTime - currentChapter.start_time) / (currentChapter.end_time - currentChapter.start_time)) * 100
+    : duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  const displayElapsed = hasChapters ? currentTime - currentChapter.start_time : currentTime;
+  const displayDuration = hasChapters ? currentChapter.end_time - currentChapter.start_time : duration;
+
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (duration) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+
+    if (hasChapters) {
+      const newTime = currentChapter.start_time + percent * (currentChapter.end_time - currentChapter.start_time);
+      seek(newTime);
+    } else if (duration) {
       const newTime = percent * duration;
       seek(newTime);
     }
@@ -80,10 +107,8 @@ export default function AudioBar({}: Props) {
     return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 border-t border-border/40 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/60 border-t border-border/40 z-50">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Desktop View */}
         <div className="hidden md:block py-3">
@@ -93,7 +118,7 @@ export default function AudioBar({}: Props) {
               <img
                 src={book?.cover_image || placeholder}
                 alt="Now playing"
-                className="w-14 h-14 rounded-md object-cover flex-shrink-0 shadow-sm"
+                className="w-14 h-14 rounded-md object-cover shrink-0 shadow-sm"
               />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{book?.name || "No book selected"}</div>
@@ -103,14 +128,30 @@ export default function AudioBar({}: Props) {
 
             {/* Center Controls */}
             <div className="flex-1 flex flex-col gap-2 max-w-2xl mx-auto">
+              {hasChapters && (
+                <Select
+                  value={String(currentChapter.chapter_index)}
+                  onValueChange={handleChapterSelect}
+                >
+                  <SelectTrigger className="h-7 max-w-xs text-xs text-muted-foreground border-none bg-transparent mx-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="top" className="max-h-[480px] overflow-y-auto">
+                    {chapters.map((ch) => (
+                      <SelectItem key={ch.id} value={String(ch.chapter_index)}>
+                        {ch.title || `Chapter ${ch.chapter_index + 1}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleSkipBackward}
-                  disabled={true}
-                  title="Skip backward not yet supported"
+                  disabled={!bookFileLocation}
                 >
                   <SkipBack className="h-4 w-4" />
                 </Button>
@@ -131,21 +172,20 @@ export default function AudioBar({}: Props) {
                   size="icon"
                   className="h-9 w-9"
                   onClick={handleSkipForward}
-                  disabled={true}
-                  title="Skip forward not yet supported"
+                  disabled={!bookFileLocation}
                 >
                   <SkipForward className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground tabular-nums min-w-[3rem] text-right">
-                  {formatTime(currentTime)}
+                <span className="text-xs text-muted-foreground tabular-nums min-w-12 text-right">
+                  {formatTime(displayElapsed)}
                 </span>
                 <div className="flex-1 cursor-pointer group" onClick={handleProgressClick}>
-                  <Progress value={progressPercent} className="h-1.5 group-hover:h-2 transition-all" />
+                  <Progress value={displayProgress} className="h-1.5 group-hover:h-2 transition-all" />
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums min-w-[3rem]">
-                  {formatTime(duration)}
+                <span className="text-xs text-muted-foreground tabular-nums min-w-12">
+                  {formatTime(displayDuration)}
                 </span>
               </div>
             </div>
@@ -175,14 +215,14 @@ export default function AudioBar({}: Props) {
               <img
                 src={book?.cover_image || placeholder}
                 alt="Now playing"
-                className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                className="w-12 h-12 rounded-md object-cover shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{book?.name || "No book selected"}</div>
                 <div className="text-xs text-muted-foreground truncate">{book?.author || ""}</div>
               </div>
 
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -219,17 +259,34 @@ export default function AudioBar({}: Props) {
                     {book?.author && (
                       <p className="text-sm text-muted-foreground line-clamp-1">{book.author}</p>
                     )}
+                    {hasChapters && (
+                      <Select
+                        value={String(currentChapter.chapter_index)}
+                        onValueChange={handleChapterSelect}
+                      >
+                        <SelectTrigger className="h-8 max-w-xs text-xs text-muted-foreground border-none bg-transparent mx-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent position="popper" side="top" className="max-h-[480px] overflow-y-auto">
+                          {chapters.map((ch) => (
+                            <SelectItem key={ch.id} value={String(ch.chapter_index)}>
+                              {ch.title || `Chapter ${ch.chapter_index + 1}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-8 pb-6">
                   <div className="space-y-2">
                     <div className="cursor-pointer" onClick={handleProgressClick}>
-                      <Progress value={progressPercent} className="h-1.5" />
+                      <Progress value={displayProgress} className="h-1.5" />
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                      <span>{formatTime(currentTime)}</span>
-                      <span>{formatTime(duration)}</span>
+                      <span>{formatTime(displayElapsed)}</span>
+                      <span>{formatTime(displayDuration)}</span>
                     </div>
                   </div>
 
@@ -270,9 +327,9 @@ export default function AudioBar({}: Props) {
 
                   <div className="flex items-center gap-3">
                     {volume === 0 ? (
-                      <VolumeX className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <VolumeX className="h-5 w-5 text-muted-foreground shrink-0" />
                     ) : (
-                      <Volume2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <Volume2 className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
                     <Slider
                       value={[volume]}

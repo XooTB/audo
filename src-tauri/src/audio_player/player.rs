@@ -1,5 +1,5 @@
 use rodio::{Decoder, OutputStream, OutputStreamBuilder, Sink};
-use std::{fs::File, io::BufReader};
+use std::{fs::File, io::BufReader, time::Duration};
 
 pub struct AudioPlayer {
     pub current_track_id: Option<i32>,
@@ -8,6 +8,7 @@ pub struct AudioPlayer {
     pub sink: Option<Sink>,
     pub source: Option<Decoder<BufReader<File>>>,
     pub current_track_path: Option<String>,
+    pub volume: f32,
 }
 
 impl AudioPlayer {
@@ -19,6 +20,7 @@ impl AudioPlayer {
             sink: None,
             source: None,
             current_track_path: None,
+            volume: 0.5,
         }
     }
 
@@ -69,8 +71,7 @@ impl AudioPlayer {
 
         println!("New sink added! Playing it...");
 
-        // Set the volume to 1.0
-        sink.set_volume(1.0);
+        sink.set_volume(self.volume);
         sink.play();
 
         // Set the states
@@ -103,8 +104,7 @@ impl AudioPlayer {
         let sink = Sink::connect_new(&stream.mixer());
         sink.append(source);
 
-        // Set the volume to 1.0
-        sink.set_volume(1.0);
+        sink.set_volume(self.volume);
         sink.pause(); // Start paused
 
         self.sink = Some(sink);
@@ -134,7 +134,7 @@ impl AudioPlayer {
 
         let sink = Sink::connect_new(&stream.mixer());
         sink.append(source);
-        sink.set_volume(1.0);
+        sink.set_volume(self.volume);
         sink.pause(); // Start paused
 
         self.sink = Some(sink);
@@ -175,5 +175,34 @@ impl AudioPlayer {
             std::io::ErrorKind::Other,
             "No sink found",
         )))
+    }
+
+    pub fn get_current_timestamp_f64(&self) -> Result<f64, Box<dyn std::error::Error>> {
+        if let Some(sink) = &self.sink {
+            let current_timestamp = sink.get_pos();
+            return Ok(current_timestamp.as_secs_f64());
+        }
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No sink found",
+        )))
+    }
+
+    pub fn seek(&self, position_secs: f64) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(sink) = &self.sink {
+            sink.try_seek(Duration::from_secs_f64(position_secs))?;
+            return Ok(());
+        }
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "No sink found",
+        )))
+    }
+
+    pub fn set_volume(&mut self, volume: f32) {
+        self.volume = volume;
+        if let Some(sink) = &self.sink {
+            sink.set_volume(volume);
+        }
     }
 }

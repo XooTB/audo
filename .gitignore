@@ -12,7 +12,6 @@ dist
 dist-ssr
 *.local
 target
-**/CLAUDE.md
 
 # Editor directories and files
 .vscode/*
@@ -24,4 +23,3 @@ target
 *.njsproj
 *.sln
 *.sw?
-.claude/*

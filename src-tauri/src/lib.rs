@@ -6,8 +6,9 @@ pub mod utils;
 
 use audio_player::AudioPlayer;
 use commands::*;
-use database::init_db;
-use std::sync::Mutex;
+use database::{init_db, save_progress};
+use sqlx::SqlitePool;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use utils::extract_metadata;
 
@@ -33,6 +34,23 @@ pub fn run() {
 
             Ok(())
         })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                let app_handle = window.app_handle();
+                let player = app_handle.state::<Mutex<AudioPlayer>>();
+                let pool = app_handle.state::<Arc<SqlitePool>>();
+
+                let player = player.lock().unwrap();
+                if let (Some(track_id), Ok(position)) =
+                    (player.get_current_track_id(), player.get_current_timestamp_f64())
+                {
+                    let pool = pool.inner().clone();
+                    tauri::async_runtime::block_on(async move {
+                        let _ = save_progress(&pool, track_id, position, None, None).await;
+                    });
+                }
+            }
+        })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -43,6 +61,13 @@ pub fn run() {
             play,
             pause,
             get_current_timestamp,
+            seek,
+            set_volume,
+            save_playback_progress,
+            get_playback_progress,
+            get_last_listened,
+            get_chapters,
+            remove_book,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
