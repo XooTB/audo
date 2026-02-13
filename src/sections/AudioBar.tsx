@@ -18,6 +18,13 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Props = {};
 
@@ -37,6 +44,7 @@ export default function AudioBar({}: Props) {
     seek,
     chapters,
     currentChapter,
+    seekToChapter,
   } = useAudioPlayer();
   
   const [isExpanded, setIsExpanded] = useState(false);
@@ -57,6 +65,10 @@ export default function AudioBar({}: Props) {
 
   const handleSkipForward = () => {
     skipForward(30);
+  };
+
+  const handleChapterSelect = (value: string) => {
+    seekToChapter(parseInt(value, 10));
   };
 
   const hasChapters = chapters.length > 0 && currentChapter !== null;
@@ -116,10 +128,22 @@ export default function AudioBar({}: Props) {
 
             {/* Center Controls */}
             <div className="flex-1 flex flex-col gap-2 max-w-2xl mx-auto">
-              {hasChapters && currentChapter.title && (
-                <div className="text-xs text-muted-foreground text-center truncate">
-                  {currentChapter.title}
-                </div>
+              {hasChapters && (
+                <Select
+                  value={String(currentChapter.chapter_index)}
+                  onValueChange={handleChapterSelect}
+                >
+                  <SelectTrigger className="h-7 max-w-xs text-xs text-muted-foreground border-none bg-transparent mx-auto">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="top" className="max-h-[480px] overflow-y-auto">
+                    {chapters.map((ch) => (
+                      <SelectItem key={ch.id} value={String(ch.chapter_index)}>
+                        {ch.title || `Chapter ${ch.chapter_index + 1}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
               <div className="flex items-center justify-center gap-2">
                 <Button
@@ -235,8 +259,22 @@ export default function AudioBar({}: Props) {
                     {book?.author && (
                       <p className="text-sm text-muted-foreground line-clamp-1">{book.author}</p>
                     )}
-                    {hasChapters && currentChapter.title && (
-                      <p className="text-xs text-muted-foreground line-clamp-1">{currentChapter.title}</p>
+                    {hasChapters && (
+                      <Select
+                        value={String(currentChapter.chapter_index)}
+                        onValueChange={handleChapterSelect}
+                      >
+                        <SelectTrigger className="h-8 max-w-xs text-xs text-muted-foreground border-none bg-transparent mx-auto">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent position="popper" side="top" className="max-h-[480px] overflow-y-auto">
+                          {chapters.map((ch) => (
+                            <SelectItem key={ch.id} value={String(ch.chapter_index)}>
+                              {ch.title || `Chapter ${ch.chapter_index + 1}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
                 </div>

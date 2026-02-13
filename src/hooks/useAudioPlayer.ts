@@ -96,18 +96,28 @@ export function useAudioPlayer() {
   );
 
   /**
-   * Seek to specific position in seconds
+   * Seek to specific position in seconds.
+   * When paused, also saves progress to DB so resuming doesn't revert the seek.
    */
   const seek = useCallback(
     async (seconds: number) => {
       try {
         await invoke("seek", { position: seconds });
-        setCurrentTime(seconds);
       } catch (err) {
         console.error("Seek error:", err);
       }
+
+      setCurrentTime(seconds);
+
+      // Persist when paused so play() doesn't revert to the old DB position
+      if (!isPlayingRef.current) {
+        const currentBook = bookRef.current;
+        if (currentBook) {
+          await saveProgress(currentBook.id, seconds);
+        }
+      }
     },
-    [setCurrentTime]
+    [setCurrentTime, saveProgress]
   );
 
   /**
@@ -130,6 +140,45 @@ export function useAudioPlayer() {
       await seek(newTime);
     },
     [seek]
+  );
+
+  /**
+   * Seek to the start of a specific chapter by index.
+   * If not currently playing, starts playback first then seeks.
+   */
+  const seekToChapter = useCallback(
+    async (chapterIndex: number) => {
+      const chaptersList = chaptersRef.current;
+      const chapter = chaptersList.find((c) => c.chapter_index === chapterIndex);
+      if (!chapter) return;
+
+      const currentBook = bookRef.current;
+      if (!currentBook) return;
+
+      // Save current progress before switching
+      await saveProgress(currentBook.id, currentTimeRef.current);
+
+      setCurrentChapter(chapter);
+
+      if (!isPlayingRef.current) {
+        // Not currently playing — start playback then seek to chapter
+        await invoke("play", { bookId: currentBook.id });
+        setIsPlaying(true);
+        // Small delay to let the sink initialize before seeking
+        setTimeout(async () => {
+          try {
+            await invoke("seek", { position: chapter.start_time });
+            setCurrentTime(chapter.start_time);
+          } catch (err) {
+            console.error("Failed to seek to chapter:", err);
+          }
+        }, 100);
+      } else {
+        // Already playing — just seek
+        await seek(chapter.start_time);
+      }
+    },
+    [seek, saveProgress, setCurrentChapter, setIsPlaying, setCurrentTime]
   );
 
   /**
@@ -412,6 +461,7 @@ export function useAudioPlayer() {
     seek,
     skipForward,
     skipBackward,
+    seekToChapter,
 
     // Progress persistence
     saveProgress,
