@@ -108,7 +108,7 @@ export default function AudioBar({}: Props) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 border-t border-border/40 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/60 border-t border-border/40 z-50">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Desktop View */}
         <div className="hidden md:block py-3">
@@ -118,7 +118,7 @@ export default function AudioBar({}: Props) {
               <img
                 src={book?.cover_image || placeholder}
                 alt="Now playing"
-                className="w-14 h-14 rounded-md object-cover flex-shrink-0 shadow-sm"
+                className="w-14 h-14 rounded-md object-cover shrink-0 shadow-sm"
               />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{book?.name || "No book selected"}</div>
@@ -178,13 +178,13 @@ export default function AudioBar({}: Props) {
                 </Button>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground tabular-nums min-w-[3rem] text-right">
+                <span className="text-xs text-muted-foreground tabular-nums min-w-12 text-right">
                   {formatTime(displayElapsed)}
                 </span>
                 <div className="flex-1 cursor-pointer group" onClick={handleProgressClick}>
                   <Progress value={displayProgress} className="h-1.5 group-hover:h-2 transition-all" />
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums min-w-[3rem]">
+                <span className="text-xs text-muted-foreground tabular-nums min-w-12">
                   {formatTime(displayDuration)}
                 </span>
               </div>
@@ -215,14 +215,14 @@ export default function AudioBar({}: Props) {
               <img
                 src={book?.cover_image || placeholder}
                 alt="Now playing"
-                className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                className="w-12 h-12 rounded-md object-cover shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate">{book?.name || "No book selected"}</div>
                 <div className="text-xs text-muted-foreground truncate">{book?.author || ""}</div>
               </div>
 
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -327,9 +327,9 @@ export default function AudioBar({}: Props) {
 
                   <div className="flex items-center gap-3">
                     {volume === 0 ? (
-                      <VolumeX className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <VolumeX className="h-5 w-5 text-muted-foreground shrink-0" />
                     ) : (
-                      <Volume2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <Volume2 className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
                     <Slider
                       value={[volume]}
