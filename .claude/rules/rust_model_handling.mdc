@@ -1,0 +1,16 @@
+---
+description: "Guide on How to handle rust structs and models when working with new/existing models"
+alwaysApply: false
+applyIntelligently: true
+---
+
+# New models
+1. When creating a new model, always first try to determine if a similar model already exists, or if any other existing structs are doing essentially the same thing. If possible try to reuse them as much as possible. 
+2. If there are no structs, then just create a new one following the locallity rules. 
+
+
+# Locallity rules
+
+This applies to new structs being created as well as old ones being modified. 
+
+When decicing the location of the structs, think about the overall usage of the struct, We want to minimize the duplication of structs and implementations as much as possible, so If we plan to only use the struct in a single file, we should put it there, but if the struct is planned to be used in multiple places, we should put it in a sort of central location, so that it's easier to work with across the codebase.
