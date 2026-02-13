@@ -17,17 +17,27 @@ pub async fn fetch_book(pool: &SqlitePool, book_id: i32) -> Result<Book, String>
     Ok(book.unwrap())
 }
 
-pub async fn save_progress(pool: &SqlitePool, book_id: i32, position: f64) -> Result<(), String> {
+pub async fn save_progress(
+    pool: &SqlitePool,
+    book_id: i32,
+    position: f64,
+    chapter_index: Option<i32>,
+    chapter_position: Option<f64>,
+) -> Result<(), String> {
     sqlx::query(
-        "INSERT INTO playback_progress (book_id, position, last_listened_at, updated_at)
-         VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        "INSERT INTO playback_progress (book_id, position, chapter_index, chapter_position, last_listened_at, updated_at)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
          ON CONFLICT(book_id) DO UPDATE SET
             position = excluded.position,
+            chapter_index = excluded.chapter_index,
+            chapter_position = excluded.chapter_position,
             last_listened_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP",
     )
     .bind(book_id)
     .bind(position)
+    .bind(chapter_index)
+    .bind(chapter_position)
     .execute(pool)
     .await
     .map_err(|e| format!("Failed to save progress: {}", e))?;

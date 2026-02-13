@@ -46,7 +46,7 @@ pub fn run() {
                 {
                     let pool = pool.inner().clone();
                     tauri::async_runtime::block_on(async move {
-                        let _ = save_progress(&pool, track_id, position).await;
+                        let _ = save_progress(&pool, track_id, position, None, None).await;
                     });
                 }
             }

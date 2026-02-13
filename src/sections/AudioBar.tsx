@@ -35,6 +35,8 @@ export default function AudioBar({}: Props) {
     skipBackward,
     skipForward,
     seek,
+    chapters,
+    currentChapter,
   } = useAudioPlayer();
   
   const [isExpanded, setIsExpanded] = useState(false);
@@ -57,10 +59,23 @@ export default function AudioBar({}: Props) {
     skipForward(30);
   };
 
+  const hasChapters = chapters.length > 0 && currentChapter !== null;
+
+  const displayProgress = hasChapters
+    ? ((currentTime - currentChapter.start_time) / (currentChapter.end_time - currentChapter.start_time)) * 100
+    : duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  const displayElapsed = hasChapters ? currentTime - currentChapter.start_time : currentTime;
+  const displayDuration = hasChapters ? currentChapter.end_time - currentChapter.start_time : duration;
+
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (duration) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+
+    if (hasChapters) {
+      const newTime = currentChapter.start_time + percent * (currentChapter.end_time - currentChapter.start_time);
+      seek(newTime);
+    } else if (duration) {
       const newTime = percent * duration;
       seek(newTime);
     }
@@ -79,8 +94,6 @@ export default function AudioBar({}: Props) {
     }
     return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
-
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 border-t border-border/40 z-50">
@@ -103,6 +116,11 @@ export default function AudioBar({}: Props) {
 
             {/* Center Controls */}
             <div className="flex-1 flex flex-col gap-2 max-w-2xl mx-auto">
+              {hasChapters && currentChapter.title && (
+                <div className="text-xs text-muted-foreground text-center truncate">
+                  {currentChapter.title}
+                </div>
+              )}
               <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="ghost"
@@ -137,13 +155,13 @@ export default function AudioBar({}: Props) {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground tabular-nums min-w-[3rem] text-right">
-                  {formatTime(currentTime)}
+                  {formatTime(displayElapsed)}
                 </span>
                 <div className="flex-1 cursor-pointer group" onClick={handleProgressClick}>
-                  <Progress value={progressPercent} className="h-1.5 group-hover:h-2 transition-all" />
+                  <Progress value={displayProgress} className="h-1.5 group-hover:h-2 transition-all" />
                 </div>
                 <span className="text-xs text-muted-foreground tabular-nums min-w-[3rem]">
-                  {formatTime(duration)}
+                  {formatTime(displayDuration)}
                 </span>
               </div>
             </div>
@@ -217,17 +235,20 @@ export default function AudioBar({}: Props) {
                     {book?.author && (
                       <p className="text-sm text-muted-foreground line-clamp-1">{book.author}</p>
                     )}
+                    {hasChapters && currentChapter.title && (
+                      <p className="text-xs text-muted-foreground line-clamp-1">{currentChapter.title}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-8 pb-6">
                   <div className="space-y-2">
                     <div className="cursor-pointer" onClick={handleProgressClick}>
-                      <Progress value={progressPercent} className="h-1.5" />
+                      <Progress value={displayProgress} className="h-1.5" />
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                      <span>{formatTime(currentTime)}</span>
-                      <span>{formatTime(duration)}</span>
+                      <span>{formatTime(displayElapsed)}</span>
+                      <span>{formatTime(displayDuration)}</span>
                     </div>
                   </div>
 

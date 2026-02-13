@@ -10,4 +10,6 @@ pub struct PlaybackProgress {
     pub last_listened_at: Option<String>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
+    pub chapter_index: Option<i32>,
+    pub chapter_position: Option<f64>,
 }

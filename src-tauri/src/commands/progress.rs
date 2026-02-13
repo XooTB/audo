@@ -9,8 +9,10 @@ pub async fn save_playback_progress(
     pool: State<'_, Arc<SqlitePool>>,
     book_id: i32,
     position: f64,
+    chapter_index: Option<i32>,
+    chapter_position: Option<f64>,
 ) -> Result<(), String> {
-    save_progress(&pool, book_id, position).await
+    save_progress(&pool, book_id, position, chapter_index, chapter_position).await
 }
 
 #[tauri::command]

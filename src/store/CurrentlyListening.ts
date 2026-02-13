@@ -1,4 +1,5 @@
 import { Book } from "@/types/book.d";
+import { Chapter } from "@/types/chapter.d";
 import { create } from "zustand";
 
 interface CurrentlyListeningStore {
@@ -18,6 +19,10 @@ interface CurrentlyListeningStore {
   setVolume: (volume: number) => void;
   error: string | null;
   setError: (error: string | null) => void;
+  chapters: Chapter[];
+  setChapters: (chapters: Chapter[]) => void;
+  currentChapter: Chapter | null;
+  setCurrentChapter: (chapter: Chapter | null) => void;
 }
 
 export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
@@ -38,5 +43,9 @@ export const useCurrentlyListeningStore = create<CurrentlyListeningStore>(
     setVolume: (volume: number) => set({ volume }),
     error: null as string | null,
     setError: (error: string | null) => set({ error }),
+    chapters: [] as Chapter[],
+    setChapters: (chapters: Chapter[]) => set({ chapters }),
+    currentChapter: null as Chapter | null,
+    setCurrentChapter: (chapter: Chapter | null) => set({ currentChapter: chapter }),
   })
 );

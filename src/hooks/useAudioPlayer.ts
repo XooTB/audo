@@ -2,7 +2,30 @@ import { useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useCurrentlyListeningStore } from "@/store/CurrentlyListening";
 import type { Book } from "@/types/book.d";
+import type { Chapter } from "@/types/chapter.d";
 import type { PlaybackProgress } from "@/types/playbackProgress.d";
+
+/**
+ * Find the chapter that contains the given time position.
+ * Returns null if no chapters or time is before all chapters.
+ */
+function findCurrentChapter(chapters: Chapter[], currentTime: number): Chapter | null {
+  if (chapters.length === 0) return null;
+
+  for (const chapter of chapters) {
+    if (currentTime >= chapter.start_time && currentTime < chapter.end_time) {
+      return chapter;
+    }
+  }
+
+  // If past last chapter's end, return last chapter
+  const lastChapter = chapters[chapters.length - 1];
+  if (currentTime >= lastChapter.end_time) {
+    return lastChapter;
+  }
+
+  return null;
+}
 
 /**
  * Audio Player Hook
@@ -27,6 +50,8 @@ export function useAudioPlayer() {
   const progress = useCurrentlyListeningStore((state) => state.progress);
   const volume = useCurrentlyListeningStore((state) => state.volume);
   const error = useCurrentlyListeningStore((state) => state.error);
+  const chapters = useCurrentlyListeningStore((state) => state.chapters);
+  const currentChapter = useCurrentlyListeningStore((state) => state.currentChapter);
 
   // Get store setters
   const setBook = useCurrentlyListeningStore((state) => state.setBook);
@@ -37,14 +62,18 @@ export function useAudioPlayer() {
   const setProgress = useCurrentlyListeningStore((state) => state.setProgress);
   const setVolume = useCurrentlyListeningStore((state) => state.setVolume);
   const setError = useCurrentlyListeningStore((state) => state.setError);
+  const setChapters = useCurrentlyListeningStore((state) => state.setChapters);
+  const setCurrentChapter = useCurrentlyListeningStore((state) => state.setCurrentChapter);
 
   // Refs for values needed in callbacks without causing re-renders
   const bookRef = useRef(book);
   const currentTimeRef = useRef(currentTime);
   const isPlayingRef = useRef(isPlaying);
+  const chaptersRef = useRef(chapters);
   bookRef.current = book;
   currentTimeRef.current = currentTime;
   isPlayingRef.current = isPlaying;
+  chaptersRef.current = chapters;
 
   /**
    * Save current playback progress to the database
@@ -52,7 +81,13 @@ export function useAudioPlayer() {
   const saveProgress = useCallback(
     async (bookId: number, position: number) => {
       try {
-        await invoke("save_playback_progress", { bookId, position });
+        const chapter = useCurrentlyListeningStore.getState().currentChapter;
+        const chapterIndex = chapter ? chapter.chapter_index : null;
+        const chapterPosition = chapter ? position - chapter.start_time : null;
+
+        await invoke("save_playback_progress", {
+          bookId, position, chapterIndex, chapterPosition,
+        });
       } catch (err) {
         console.error("Failed to save progress:", err);
       }
@@ -118,17 +153,63 @@ export function useAudioPlayer() {
         await invoke("play", { bookId });
         setIsPlaying(true);
 
+        // Fetch chapters for the book
+        const bookChapters = await invoke<Chapter[]>("get_chapters", { bookId });
+        setChapters(bookChapters);
+
         // If there's saved progress and we loaded a new source, seek to it
         if (savedProgress && savedProgress.position > 0) {
+          let resumePosition = savedProgress.position;
+          let resumeChapter: Chapter | null = null;
+
+          // Try chapter-based resume first
+          if (
+            savedProgress.chapter_index !== null &&
+            savedProgress.chapter_position !== null &&
+            bookChapters.length > 0
+          ) {
+            const chapter = bookChapters.find(
+              (c) => c.chapter_index === savedProgress.chapter_index
+            );
+            if (chapter) {
+              const chapterDuration = chapter.end_time - chapter.start_time;
+              if (
+                savedProgress.chapter_position >= 0 &&
+                savedProgress.chapter_position <= chapterDuration
+              ) {
+                const reconstructedPosition =
+                  chapter.start_time + savedProgress.chapter_position;
+                if (Math.abs(reconstructedPosition - savedProgress.position) <= 2) {
+                  resumePosition = reconstructedPosition;
+                  resumeChapter = chapter;
+                }
+              }
+            }
+          }
+
+          // Fall back to position-based chapter detection
+          if (!resumeChapter && bookChapters.length > 0) {
+            resumeChapter = findCurrentChapter(bookChapters, resumePosition);
+          }
+
+          setCurrentChapter(resumeChapter);
+
           // Small delay to let the sink initialize before seeking
           setTimeout(async () => {
             try {
-              await invoke("seek", { position: savedProgress.position });
-              setCurrentTime(savedProgress.position);
+              await invoke("seek", { position: resumePosition });
+              setCurrentTime(resumePosition);
             } catch (err) {
               console.error("Failed to seek to saved position:", err);
             }
           }, 100);
+        } else {
+          // No saved progress — detect chapter at start
+          if (bookChapters.length > 0) {
+            setCurrentChapter(findCurrentChapter(bookChapters, 0));
+          } else {
+            setCurrentChapter(null);
+          }
         }
       } catch (error) {
         console.error("Play error:", error);
@@ -136,7 +217,7 @@ export function useAudioPlayer() {
         setIsPlaying(false);
       }
     },
-    [setIsPlaying, setError, setCurrentTime, saveProgress]
+    [setIsPlaying, setError, setCurrentTime, setChapters, setCurrentChapter, saveProgress]
   );
 
   /**
@@ -200,15 +281,54 @@ export function useAudioPlayer() {
         setBook(lastBook);
         setBookFileLocation(lastBook.file_location);
         setDuration(lastBook.duration);
-        setCurrentTime(lastProgress.position);
+
+        // Fetch chapters for the last listened book
+        const bookChapters = await invoke<Chapter[]>("get_chapters", { bookId: lastBook.id });
+        setChapters(bookChapters);
+
+        let resumePosition = lastProgress.position;
+        let resumeChapter: Chapter | null = null;
+
+        // Try chapter-based resume first
+        if (
+          lastProgress.chapter_index !== null &&
+          lastProgress.chapter_position !== null &&
+          bookChapters.length > 0
+        ) {
+          const chapter = bookChapters.find(
+            (c) => c.chapter_index === lastProgress.chapter_index
+          );
+          if (chapter) {
+            const chapterDuration = chapter.end_time - chapter.start_time;
+            if (
+              lastProgress.chapter_position >= 0 &&
+              lastProgress.chapter_position <= chapterDuration
+            ) {
+              const reconstructedPosition =
+                chapter.start_time + lastProgress.chapter_position;
+              if (Math.abs(reconstructedPosition - lastProgress.position) <= 2) {
+                resumePosition = reconstructedPosition;
+                resumeChapter = chapter;
+              }
+            }
+          }
+        }
+
+        // Fall back to position-based chapter detection
+        if (!resumeChapter && bookChapters.length > 0) {
+          resumeChapter = findCurrentChapter(bookChapters, resumePosition);
+        }
+
+        setCurrentChapter(resumeChapter);
+        setCurrentTime(resumePosition);
         if (lastBook.duration > 0) {
-          setProgress((lastProgress.position / lastBook.duration) * 100);
+          setProgress((resumePosition / lastBook.duration) * 100);
         }
       }
     } catch (err) {
       console.error("Failed to load last listened book:", err);
     }
-  }, [setBook, setBookFileLocation, setDuration, setCurrentTime, setProgress]);
+  }, [setBook, setBookFileLocation, setDuration, setCurrentTime, setProgress, setChapters, setCurrentChapter]);
 
   /**
    * Progress polling effect
@@ -228,6 +348,13 @@ export function useAudioPlayer() {
           const progressPercent = (timestamp / duration) * 100;
           setProgress(progressPercent);
         }
+
+        // Detect chapter changes
+        const chapter = findCurrentChapter(chaptersRef.current, timestamp);
+        const prevChapter = useCurrentlyListeningStore.getState().currentChapter;
+        if (chapter?.id !== prevChapter?.id) {
+          setCurrentChapter(chapter);
+        }
       } catch (error) {
         console.error("Timestamp poll error:", error);
       }
@@ -238,7 +365,7 @@ export function useAudioPlayer() {
     const interval = setInterval(pollTimestamp, 500);
 
     return () => clearInterval(interval);
-  }, [isPlaying, duration, setCurrentTime, setProgress]);
+  }, [isPlaying, duration, setCurrentTime, setProgress, setCurrentChapter]);
 
   /**
    * Auto-save effect
@@ -265,6 +392,8 @@ export function useAudioPlayer() {
     progress,
     volume,
     error,
+    chapters,
+    currentChapter,
 
     // Playback control methods
     play,
