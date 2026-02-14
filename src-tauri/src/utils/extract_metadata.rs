@@ -162,3 +162,197 @@ pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<
     let metadata = parse_ffprobe_output(&stdout)?;
     Ok(metadata)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn full_ffprobe_json() -> String {
+        r#"{
+            "format": {
+                "duration": "21083.5",
+                "size": "350000000",
+                "start_time": "0.000000",
+                "bit_rate": "128000",
+                "tags": {
+                    "title": "The Hitchhiker's Guide to the Galaxy",
+                    "artist": "Douglas Adams",
+                    "composer": "Stephen Fry",
+                    "date": "2005",
+                    "description": "A great sci-fi comedy",
+                    "ASIN": "B0009JKV9W",
+                    "ISBN": "978-0345391803"
+                }
+            },
+            "chapters": [
+                {
+                    "id": 0,
+                    "start_time": "0.000000",
+                    "end_time": "600.000000",
+                    "tags": { "title": "Chapter 1" }
+                },
+                {
+                    "id": 1,
+                    "start_time": "600.000000",
+                    "end_time": "1200.000000",
+                    "tags": { "title": "Chapter 2" }
+                }
+            ]
+        }"#
+        .to_string()
+    }
+
+    #[test]
+    fn test_parse_complete_metadata() {
+        let result = parse_ffprobe_output(&full_ffprobe_json()).unwrap();
+
+        assert_eq!(result.title, "The Hitchhiker's Guide to the Galaxy");
+        assert_eq!(result.author, "Douglas Adams");
+        assert_eq!(result.narrator, "Stephen Fry");
+        assert_eq!(result.duration, "21083.5");
+        assert_eq!(result.size, "350000000");
+        assert_eq!(result.start_time, "0.000000");
+        assert_eq!(result.date, "2005");
+        assert_eq!(result.description, "A great sci-fi comedy");
+        assert_eq!(result.asin.as_deref(), Some("B0009JKV9W"));
+        assert_eq!(result.isbn.as_deref(), Some("978-0345391803"));
+    }
+
+    #[test]
+    fn test_parse_chapters_flattened() {
+        let result = parse_ffprobe_output(&full_ffprobe_json()).unwrap();
+
+        assert_eq!(result.chapters.len(), 2);
+        assert_eq!(result.chapters[0].id, 0);
+        assert_eq!(result.chapters[0].start_time, "0.000000");
+        assert_eq!(result.chapters[0].end_time, "600.000000");
+        assert_eq!(result.chapters[0].title.as_deref(), Some("Chapter 1"));
+        assert_eq!(result.chapters[1].id, 1);
+        assert_eq!(result.chapters[1].start_time, "600.000000");
+        assert_eq!(result.chapters[1].end_time, "1200.000000");
+        assert_eq!(result.chapters[1].title.as_deref(), Some("Chapter 2"));
+    }
+
+    #[test]
+    fn test_parse_missing_tags_defaults_to_unknown() {
+        let json = r#"{
+            "format": {
+                "duration": "3600.0",
+                "size": "100000"
+            },
+            "chapters": []
+        }"#;
+
+        let result = parse_ffprobe_output(json).unwrap();
+
+        assert_eq!(result.title, "Unknown");
+        assert_eq!(result.author, "Unknown");
+        assert_eq!(result.narrator, "Unknown");
+        assert_eq!(result.date, "Unknown");
+        assert_eq!(result.description, "Unknown");
+        assert!(result.asin.is_none());
+        assert!(result.isbn.is_none());
+    }
+
+    #[test]
+    fn test_parse_invalid_json_returns_error() {
+        let result = parse_ffprobe_output("not valid json");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_artist_fallback_to_album_artist() {
+        let json = r#"{
+            "format": {
+                "duration": "3600.0",
+                "tags": {
+                    "title": "My Book",
+                    "album_artist": "Fallback Author",
+                    "composer": "Narrator Name"
+                }
+            },
+            "chapters": []
+        }"#;
+
+        let result = parse_ffprobe_output(json).unwrap();
+        assert_eq!(result.author, "Fallback Author");
+    }
+
+    #[test]
+    fn test_asin_via_audible_asin_alias() {
+        let json = r#"{
+            "format": {
+                "duration": "3600.0",
+                "tags": {
+                    "title": "My Book",
+                    "artist": "Author",
+                    "AUDIBLE_ASIN": "B00AUDIBLE1"
+                }
+            },
+            "chapters": []
+        }"#;
+
+        let result = parse_ffprobe_output(json).unwrap();
+        assert_eq!(result.asin.as_deref(), Some("B00AUDIBLE1"));
+    }
+
+    #[test]
+    fn test_content_id_generated_when_known() {
+        let result = parse_ffprobe_output(&full_ffprobe_json()).unwrap();
+
+        assert!(result.content_id.is_some());
+        assert_eq!(result.identity_method.as_deref(), Some("composite"));
+    }
+
+    #[test]
+    fn test_content_id_none_when_unknown_author() {
+        let json = r#"{
+            "format": {
+                "duration": "3600.0",
+                "tags": {
+                    "title": "My Book"
+                }
+            },
+            "chapters": []
+        }"#;
+
+        let result = parse_ffprobe_output(json).unwrap();
+        assert!(result.content_id.is_none());
+        assert!(result.identity_method.is_none());
+    }
+
+    #[test]
+    fn test_no_chapters() {
+        let json = r#"{
+            "format": {
+                "duration": "3600.0",
+                "tags": {
+                    "title": "My Book",
+                    "artist": "Author"
+                }
+            },
+            "chapters": []
+        }"#;
+
+        let result = parse_ffprobe_output(json).unwrap();
+        assert!(result.chapters.is_empty());
+    }
+
+    #[test]
+    fn test_description_falls_back_to_comment() {
+        let json = r#"{
+            "format": {
+                "duration": "3600.0",
+                "tags": {
+                    "title": "My Book",
+                    "artist": "Author",
+                    "comment": "This is a comment description"
+                }
+            },
+            "chapters": []
+        }"#;
+
+        let result = parse_ffprobe_output(json).unwrap();
+        assert_eq!(result.description, "This is a comment description");
+    }
+}

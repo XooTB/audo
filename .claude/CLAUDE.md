@@ -20,9 +20,24 @@ npm run dev
 
 # Type-check and build frontend
 npm run build
+
+# Run all frontend tests (watch mode)
+npm test
+
+# Run all frontend tests (single run, for CI)
+npm run test:run
+
+# Run a single frontend test file
+npx vitest run path/to/file.test.ts
+
+# Run all Rust tests
+cd src-tauri && cargo test
+
+# Run specific Rust test module
+cd src-tauri && cargo test --lib module::tests
 ```
 
-There are no test or lint commands configured.
+For detailed testing conventions, see [testing-guide.md](.claude/docs/testing-guide.md).
 
 ## Architecture
 

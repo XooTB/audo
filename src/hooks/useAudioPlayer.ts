@@ -9,7 +9,7 @@ import type { PlaybackProgress } from "@/types/playbackProgress.d";
  * Find the chapter that contains the given time position.
  * Returns null if no chapters or time is before all chapters.
  */
-function findCurrentChapter(chapters: Chapter[], currentTime: number): Chapter | null {
+export function findCurrentChapter(chapters: Chapter[], currentTime: number): Chapter | null {
   if (chapters.length === 0) return null;
 
   for (const chapter of chapters) {
