@@ -4,20 +4,15 @@ import { Book } from "@/types/book.d";
 import BookCard from "@/components/BookCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen } from "lucide-react";
+import { useBooksStore } from "@/store/books";
 
 type Props = {};
 
 const Home = ({}: Props) => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { books, loading, fetchBooks, removeBook } = useBooksStore();
 
   useEffect(() => {
-    invoke("get_all_books", {}).then((result) => {
-      setBooks(result as Book[]);
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
+    fetchBooks();
   }, []);
 
   return (

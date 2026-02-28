@@ -1,9 +1,11 @@
 import { Book } from "@/types/book"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import PosterPlaceholder from "@/assets/poster_placeholder.png"
+import { getCoverImageSrc } from "@/utils/coverImage"
 import { useAudioPlayer } from "@/hooks/useAudioPlayer"
 import { useCurrentlyListeningStore } from "@/store/CurrentlyListening"
+import { useBooksStore } from "@/store/books"
+import { useToast } from "@/hooks/use-toast"
 import { invoke } from "@tauri-apps/api/core"
 import { Play, Pause, Clock, User, Mic, Trash2 } from "lucide-react"
 import { useState } from "react"
@@ -25,6 +27,8 @@ const BookCard = ({ book, onRemove }: Props) => {
   } = useAudioPlayer()
   
   const clearPlayer = useCurrentlyListeningStore((s) => s.clearPlayer)
+  const removeBook = useBooksStore((s) => s.removeBook)
+  const { toast } = useToast()
   const [showModal, setShowModal] = useState(false)
   const [confirmingRemove, setConfirmingRemove] = useState(false)
 
@@ -58,7 +62,7 @@ const BookCard = ({ book, onRemove }: Props) => {
       <div className="group cursor-pointer" onClick={() => setShowModal(true)}>
       <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-muted mb-3 shadow-md">
         <img
-          src={book.cover_image || PosterPlaceholder}
+          src={getCoverImageSrc(book.cover_image)}
           alt={book.name}
           className="w-full h-full object-cover"
         />
@@ -103,7 +107,7 @@ const BookCard = ({ book, onRemove }: Props) => {
             <div className="flex gap-6 mt-6">
               <div className="flex-shrink-0">
                 <img
-                  src={book.cover_image || PosterPlaceholder}
+                  src={getCoverImageSrc(book.cover_image)}
                   alt={book.name}
                   className="w-40 h-60 object-cover rounded-md shadow-lg"
                 />
@@ -165,7 +169,12 @@ const BookCard = ({ book, onRemove }: Props) => {
                         if (isCurrentBook) {
                           clearPlayer()
                         }
+                        removeBook(book.id!)
                         onRemove?.(book.id!)
+                        toast({
+                          title: "Book removed",
+                          description: `"${book.name}" has been removed from your library.`,
+                        })
                         setShowModal(false)
                         setConfirmingRemove(false)
                       }}

@@ -19,15 +19,15 @@
     ],
     "security": {
       "csp": {
-        "media-src": "'self' asset: https://asset.localhost"
+        "media-src": "'self' asset: https://asset.localhost",
+        "img-src": "'self' asset: https://asset.localhost blob: data:"
       },
       "assetProtocol": {
         "enable": true,
-        "scope": [
-          "**/*",
-          "/home/**/*",
-          "C:/Users/**"
-        ]
+        "scope": {
+          "requireLiteralLeadingDot": false,
+          "allow": ["$APPDATA/**"]
+        }
       }
     }
   },

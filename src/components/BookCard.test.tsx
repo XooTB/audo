@@ -4,6 +4,11 @@ import { MemoryRouter } from "react-router";
 import BookCard from "./BookCard";
 import type { Book } from "@/types/book.d";
 
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(),
+  convertFileSrc: (path: string) => `asset://localhost${path}`,
+}));
+
 const mockBook: Book = {
   id: 1,
   name: "Project Hail Mary",
@@ -133,5 +138,34 @@ describe("BookCard", () => {
     );
 
     expect(screen.getByText("Paused")).toBeInTheDocument();
+  });
+
+  it("uses converted asset URL for cover image when cover_image is set", () => {
+    const bookWithCover: Book = {
+      ...mockBook,
+      cover_image: "/home/user/.local/share/audo/covers/12345.jpg",
+    };
+
+    render(
+      <MemoryRouter>
+        <BookCard book={bookWithCover} />
+      </MemoryRouter>
+    );
+
+    const imgs = screen.getAllByRole("img", { name: bookWithCover.name });
+    expect(imgs[0].getAttribute("src")).toBe(
+      "asset://localhost/home/user/.local/share/audo/covers/12345.jpg"
+    );
+  });
+
+  it("uses placeholder image when cover_image is empty", () => {
+    render(
+      <MemoryRouter>
+        <BookCard book={mockBook} />
+      </MemoryRouter>
+    );
+
+    const imgs = screen.getAllByRole("img", { name: mockBook.name });
+    expect(imgs[0].getAttribute("src")).not.toContain("asset://localhost");
   });
 });

@@ -22,9 +22,22 @@
             "quiet",
             "-print_format",
             "json",
-            "-show_format"
+            "-show_format",
+            "-show_chapters",
+            "-show_streams",
+            true
           ],
           "name": "binaries/ffmpeg/bin/ffprobe",
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": ["-i", true, "-an", "-vcodec", "copy", true],
+          "name": "binaries/ffmpeg/bin/ffmpeg",
           "sidecar": true
         }
       ]

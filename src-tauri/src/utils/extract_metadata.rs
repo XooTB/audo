@@ -26,6 +26,21 @@ pub struct Metadata {
 pub struct FfprobeOutput {
     pub format: Format,
     pub chapters: Vec<FfprobeChapter>,
+    pub streams: Option<Vec<FfprobeStream>>,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+pub struct FfprobeStream {
+    pub codec_type: Option<String>,
+    pub codec_name: Option<String>,
+    pub disposition: Option<FfprobeDisposition>,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+pub struct FfprobeDisposition {
+    pub attached_pic: Option<i32>,
 }
 
 // Intermediate struct for deserializing ffprobe's nested chapter format
@@ -153,6 +168,7 @@ pub async fn extract_metadata(app: tauri::AppHandle, file_path: &str) -> Result<
             "json",
             "-show_format",
             "-show_chapters",
+            "-show_streams",
         ])
         .arg(file_path);
 

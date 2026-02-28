@@ -1,10 +1,10 @@
 use crate::audio_player::AudioPlayer;
 use crate::database::{get_chapters_for_book, save_chapters};
 use crate::models::{Book, Chapter};
-use crate::utils::extract_metadata;
+use crate::utils::{extract_metadata, get_cover_art};
 use sqlx::SqlitePool;
 use std::sync::{Arc, Mutex};
-use tauri::State;
+use tauri::{Manager, State};
 
 #[tauri::command]
 pub async fn get_all_books(pool: State<'_, Arc<SqlitePool>>) -> Result<Vec<Book>, String> {
@@ -22,15 +22,27 @@ pub async fn add_book(
     pool: State<'_, Arc<SqlitePool>>,
     file_path: String,
 ) -> Result<(), String> {
+    let app_clone = app.clone();
     let metadata = extract_metadata(app, &file_path)
         .await
         .expect("Failed to extract metadata");
+
+    let covers_dir = app_clone
+        .path()
+        .app_data_dir()
+        .map_err(|e: tauri::Error| e.to_string())?
+        .join("covers");
+    std::fs::create_dir_all(&covers_dir).map_err(|e| e.to_string())?;
+
+    let cover_image = get_cover_art(&app_clone, &file_path, &covers_dir)
+        .await
+        .unwrap_or_default();
 
     let book = Book {
         id: None,
         name: metadata.title,
         file_location: file_path,
-        cover_image: "".to_string(),
+        cover_image,
         author: metadata.author,
         narrator: metadata.narrator,
         duration: metadata.duration.parse::<f64>().unwrap_or(0.0),
@@ -71,7 +83,6 @@ pub async fn add_book(
 
     let book_id = result.last_insert_rowid() as i32;
     save_chapters(&pool, book_id, &metadata.chapters).await?;
-
     Ok(())
 }
 
@@ -89,6 +100,19 @@ pub async fn remove_book(
             player.current_track_id = None;
             player.current_track_path = None;
         }
+    }
+
+    let cover_image = sqlx::query_scalar::<_, String>(
+        "SELECT cover_image FROM audio_books WHERE id = ?",
+    )
+    .bind(book_id)
+    .fetch_optional(&**pool)
+    .await
+    .unwrap_or(None)
+    .unwrap_or_default();
+
+    if !cover_image.is_empty() {
+        let _ = std::fs::remove_file(&cover_image);
     }
 
     sqlx::query("DELETE FROM audio_books WHERE id = ?")

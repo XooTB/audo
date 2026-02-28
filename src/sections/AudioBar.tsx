@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import placeholder from "@/assets/player_placeholder.png";
+import { getCoverImageSrc } from "@/utils/coverImage";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useState } from "react";
 import {
@@ -116,7 +116,7 @@ export default function AudioBar({}: Props) {
             {/* Book Info */}
             <div className="flex items-center gap-3 min-w-[200px] max-w-[280px]">
               <img
-                src={book?.cover_image || placeholder}
+                src={getCoverImageSrc(book?.cover_image)}
                 alt="Now playing"
                 className="w-14 h-14 rounded-md object-cover shrink-0 shadow-sm"
               />
@@ -213,7 +213,7 @@ export default function AudioBar({}: Props) {
           <Sheet open={isExpanded} onOpenChange={setIsExpanded}>
             <div className="flex items-center gap-3 py-3">
               <img
-                src={book?.cover_image || placeholder}
+                src={getCoverImageSrc(book?.cover_image)}
                 alt="Now playing"
                 className="w-12 h-12 rounded-md object-cover shrink-0"
               />
@@ -249,7 +249,7 @@ export default function AudioBar({}: Props) {
                 <div className="flex-1 flex flex-col items-center justify-center space-y-6 max-w-sm mx-auto w-full">
                   <div className="relative w-full aspect-square max-w-[280px]">
                     <img
-                      src={book?.cover_image || placeholder}
+                      src={getCoverImageSrc(book?.cover_image)}
                       alt="Now playing"
                       className="w-full h-full rounded-2xl object-cover shadow-xl"
                     />

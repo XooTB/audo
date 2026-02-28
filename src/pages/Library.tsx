@@ -1,6 +1,5 @@
-import { Book } from "@/types/book.d";
-import { invoke } from "@tauri-apps/api/core";
-import { useState, useEffect } from "react";
+import { useBooksStore } from "@/store/books";
+import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import BookCard from "@/components/BookCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,17 +8,15 @@ import { BookOpen, Clock, Heart } from "lucide-react";
 type Props = {};
 
 const Library = ({}: Props) => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { books, loading, fetchBooks, removeBook } = useBooksStore();
 
   useEffect(() => {
-    invoke("get_all_books", {}).then((result) => {
-      setBooks(result as Book[]);
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
-  }, []);
+    fetchBooks();
+  }, [fetchBooks]);
+
+  const handleRemove = (bookId: number) => {
+    removeBook(bookId);
+  };
 
   return (
     <div className="space-y-8">
@@ -61,7 +58,7 @@ const Library = ({}: Props) => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {books.map((book) => (
-                <BookCard key={book.id} book={book} onRemove={(id) => setBooks((prev) => prev.filter((b) => b.id !== id))} />
+                <BookCard key={book.id} book={book} onRemove={handleRemove} />
               ))}
             </div>
           )}
