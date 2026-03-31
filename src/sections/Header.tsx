@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router";
-import { Menu, Moon, Sun, Home, BookOpen, Settings } from "lucide-react";
+import { Menu, Moon, Sun, Home, BookOpen, Settings, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import ImportBtn from "@/components/importBtn";
 import { useTheme } from "@/components/theme-provider";
 
@@ -32,12 +32,20 @@ const Header = ({}: Props) => {
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">A</span>
+              <SheetContent side="left" className="w-64 px-5 pt-5" showCloseButton={false}>
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-sm">A</span>
+                    </div>
+                    <span className="text-lg font-semibold tracking-tight">Audo</span>
                   </div>
-                  <span className="text-lg font-semibold tracking-tight">Audo</span>
+                  <SheetClose asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <span className="sr-only">Close</span>
+                      <XIcon className="h-4 w-4" />
+                    </Button>
+                  </SheetClose>
                 </div>
                 <nav className="flex flex-col gap-1">
                   {navItems.map((item) => (

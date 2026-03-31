@@ -34,10 +34,10 @@ const Library = ({}: Props) => {
         
         <TabsContent value="all" className="mt-6">
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {Array.from({ length: 12 }).map((_, index) => (
                 <div key={index} className="space-y-3">
-                  <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+                  <Skeleton className="aspect-square w-full rounded-lg" />
                   <div className="space-y-2 px-1">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-3 w-2/3" />
@@ -56,7 +56,7 @@ const Library = ({}: Props) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {books.map((book) => (
                 <BookCard key={book.id} book={book} onRemove={handleRemove} />
               ))}

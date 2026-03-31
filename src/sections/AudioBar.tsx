@@ -6,7 +6,8 @@ import {
   SkipBack,
   SkipForward,
   VolumeX,
-  ChevronUp,
+  ChevronDown,
+  ListMusic,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
@@ -15,6 +16,7 @@ import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { useState } from "react";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
@@ -25,6 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 type Props = {};
 
@@ -108,7 +115,7 @@ export default function AudioBar({}: Props) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/60 border-t border-border/40 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 md:bg-background/80 md:backdrop-blur-xl md:supports-backdrop-filter:bg-background/60 md:border-border/40">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Desktop View */}
         <div className="hidden md:block py-3">
@@ -211,61 +218,121 @@ export default function AudioBar({}: Props) {
         {/* Mobile View */}
         <div className="md:hidden">
           <Sheet open={isExpanded} onOpenChange={setIsExpanded}>
-            <div className="flex items-center gap-3 py-3">
-              <img
-                src={getCoverImageSrc(book?.cover_image)}
-                alt="Now playing"
-                className="w-12 h-12 rounded-md object-cover shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{book?.name || "No book selected"}</div>
-                <div className="text-xs text-muted-foreground truncate">{book?.author || ""}</div>
+            <div>
+              <div className="cursor-pointer" onClick={handleProgressClick}>
+                <Progress value={displayProgress} className="h-1 rounded-none" />
               </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9"
-                  onClick={handlePlayPause}
-                  disabled={!bookFileLocation}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4 ml-0.5" />
-                  )}
-                </Button>
+              <div className="flex items-center gap-3 py-2.5">
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
+                  <img
+                    src={getCoverImageSrc(book?.cover_image)}
+                    alt="Now playing"
+                    className="w-12 h-12 rounded-md object-cover shrink-0 cursor-pointer"
+                  />
                 </SheetTrigger>
+                <SheetTrigger asChild>
+                  <div className="flex-1 min-w-0 cursor-pointer">
+                    <div className="text-sm font-medium truncate">{book?.name || "No book selected"}</div>
+                    <div className="text-xs text-muted-foreground truncate">{book?.author || ""}</div>
+                  </div>
+                </SheetTrigger>
+
+                <div className="flex items-center shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 active:scale-90 transition-transform"
+                    onClick={() => { handleSkipBackward(); setIsExpanded(true); }}
+                    disabled={!bookFileLocation}
+                  >
+                    <SkipBack className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 active:scale-90 transition-transform"
+                    onClick={handlePlayPause}
+                    disabled={!bookFileLocation}
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4 ml-0.5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 active:scale-90 transition-transform"
+                    onClick={() => { handleSkipForward(); setIsExpanded(true); }}
+                    disabled={!bookFileLocation}
+                  >
+                    <SkipForward className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <SheetContent side="bottom" className="h-[90vh] px-6">
-              <div className="flex flex-col h-full py-8">
-                <div className="flex-1 flex flex-col items-center justify-center space-y-6 max-w-sm mx-auto w-full">
-                  <div className="relative w-full aspect-square max-w-[280px]">
-                    <img
-                      src={getCoverImageSrc(book?.cover_image)}
-                      alt="Now playing"
-                      className="w-full h-full rounded-2xl object-cover shadow-xl"
-                    />
+            <SheetContent side="bottom" className="h-dvh rounded-none border-none p-0" showCloseButton={false}>
+              <div className="flex flex-col h-full">
+                {/* Top bar — back button + title/author */}
+                <SheetClose asChild>
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-4 py-3 pb-12 bg-gradient-to-b from-black/95 via-black/70 to-transparent cursor-pointer">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-white hover:bg-white/20" tabIndex={-1}>
+                      <ChevronDown className="h-5 w-5" />
+                    </Button>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate text-white">{book?.name || "No book selected"}</p>
+                      {book?.author && (
+                        <p className="text-xs text-white/70 truncate">{book.author}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-center space-y-1.5 w-full px-4">
-                    <h2 className="text-lg font-semibold line-clamp-2">{book?.name || "No book selected"}</h2>
-                    {book?.author && (
-                      <p className="text-sm text-muted-foreground line-clamp-1">{book.author}</p>
-                    )}
+                </SheetClose>
+
+                {/* Cover image — fills top portion */}
+                <div className="flex-1 relative min-h-0">
+                  <img
+                    src={getCoverImageSrc(book?.cover_image)}
+                    alt="Now playing"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Bottom gradient overlay bleeding into cover */}
+                <div className="absolute bottom-0 left-0 right-0 h-72 bg-gradient-to-t from-background from-30% via-background/85 via-60% to-transparent pointer-events-none z-[1]" />
+                {/* Controls section — compact bottom area */}
+                <div className="px-6 pt-3 pb-6 space-y-3 relative z-[2]">
+                  <div className="space-y-1.5">
+                    <Slider
+                      value={[displayProgress]}
+                      onValueChange={(value) => {
+                        const percent = value[0] / 100;
+                        if (hasChapters) {
+                          seek(currentChapter.start_time + percent * (currentChapter.end_time - currentChapter.start_time));
+                        } else if (duration) {
+                          seek(percent * duration);
+                        }
+                      }}
+                      max={100}
+                      step={0.1}
+                      className="w-full [&_[data-slot=slider-thumb]]:h-5 [&_[data-slot=slider-thumb]]:w-5"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+                      <span>{formatTime(displayElapsed)}</span>
+                      <span>{formatTime(displayDuration)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-4 relative">
                     {hasChapters && (
                       <Select
                         value={String(currentChapter.chapter_index)}
                         onValueChange={handleChapterSelect}
                       >
-                        <SelectTrigger className="h-8 max-w-xs text-xs text-muted-foreground border-none bg-transparent mx-auto">
-                          <SelectValue />
+                        <SelectTrigger className="h-10 absolute left-0 text-xs border-none bg-transparent px-3 gap-1.5 max-w-[180px] [&>svg:last-child]:hidden">
+                          <ListMusic className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{currentChapter.title || `Ch. ${currentChapter.chapter_index + 1}`}</span>
                         </SelectTrigger>
                         <SelectContent position="popper" side="top" className="max-h-[480px] overflow-y-auto">
                           {chapters.map((ch) => (
@@ -276,68 +343,57 @@ export default function AudioBar({}: Props) {
                         </SelectContent>
                       </Select>
                     )}
-                  </div>
-                </div>
-
-                <div className="space-y-8 pb-6">
-                  <div className="space-y-2">
-                    <div className="cursor-pointer" onClick={handleProgressClick}>
-                      <Progress value={displayProgress} className="h-1.5" />
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-                      <span>{formatTime(displayElapsed)}</span>
-                      <span>{formatTime(displayDuration)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-6">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-14 w-14"
+                      className="h-12 w-12 active:scale-90 transition-transform"
                       onClick={handleSkipBackward}
-                      disabled={true}
-                      title="Skip backward not yet supported"
+                      disabled={!bookFileLocation}
                     >
-                      <SkipBack className="h-6 w-6" />
+                      <SkipBack className="h-5 w-5" />
                     </Button>
                     <Button
                       size="icon"
-                      className="h-20 w-20 rounded-full shadow-lg"
+                      className="h-16 w-16 rounded-full shadow-lg active:scale-90 transition-transform"
                       onClick={handlePlayPause}
                       disabled={!bookFileLocation}
                     >
                       {isPlaying ? (
-                        <Pause className="h-7 w-7" />
+                        <Pause className="h-6 w-6" />
                       ) : (
-                        <Play className="h-7 w-7 ml-0.5" />
+                        <Play className="h-6 w-6 ml-0.5" />
                       )}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-14 w-14"
+                      className="h-12 w-12 active:scale-90 transition-transform"
                       onClick={handleSkipForward}
-                      disabled={true}
-                      title="Skip forward not yet supported"
+                      disabled={!bookFileLocation}
                     >
-                      <SkipForward className="h-6 w-6" />
+                      <SkipForward className="h-5 w-5" />
                     </Button>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {volume === 0 ? (
-                      <VolumeX className="h-5 w-5 text-muted-foreground shrink-0" />
-                    ) : (
-                      <Volume2 className="h-5 w-5 text-muted-foreground shrink-0" />
-                    )}
-                    <Slider
-                      value={[volume]}
-                      onValueChange={(value) => setVolume(value[0])}
-                      max={100}
-                      step={1}
-                      className="flex-1"
-                    />
+                    <Popover modal={false}>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 absolute right-0 active:scale-90 transition-transform">
+                          {volume === 0 ? (
+                            <VolumeX className="h-5 w-5" />
+                          ) : (
+                            <Volume2 className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" align="end" sideOffset={8} className="w-10 p-0 py-3 flex items-center justify-center">
+                        <Slider
+                          orientation="vertical"
+                          value={[volume]}
+                          onValueChange={(value) => setVolume(value[0])}
+                          max={100}
+                          step={1}
+                          className="!min-h-0 !h-32"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </div>

@@ -60,7 +60,7 @@ const BookCard = ({ book, onRemove }: Props) => {
   return (
     <>
       <div className="group cursor-pointer" onClick={() => setShowModal(true)}>
-      <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-muted mb-3 shadow-md">
+      <div className="relative aspect-square overflow-hidden rounded-md bg-muted mb-3 shadow-md">
         <img
           src={getCoverImageSrc(book.cover_image)}
           alt={book.name}
@@ -93,7 +93,7 @@ const BookCard = ({ book, onRemove }: Props) => {
         <h3 className="font-medium text-sm leading-snug line-clamp-2">
           {book.name}
         </h3>
-        <p className="text-xs text-muted-foreground line-clamp-1">
+        <p className="text-xs text-muted-foreground line-clamp-1 capitalize">
           {book.author}
         </p>
       </div>
@@ -117,7 +117,7 @@ const BookCard = ({ book, onRemove }: Props) => {
                   <div className="flex items-center gap-2 text-foreground">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Author:</span>
-                    <span>{book.author}</span>
+                    <span className="capitalize">{book.author}</span>
                   </div>
                   <div className="flex items-center gap-2 text-foreground">
                     <Mic className="h-4 w-4 text-muted-foreground" />

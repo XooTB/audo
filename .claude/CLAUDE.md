@@ -15,11 +15,14 @@ npm run tauri dev
 # Build for production
 npm run tauri build
 
-# Frontend only (no Tauri backend)
+# Frontend only (no Tauri backend, Vite dev server on port 1420)
 npm run dev
 
 # Type-check and build frontend
 npm run build
+
+# Type-check only (no emit)
+npx tsc --noEmit
 
 # Run all frontend tests (watch mode)
 npm test
@@ -38,6 +41,13 @@ cd src-tauri && cargo test --lib module::tests
 ```
 
 For detailed testing conventions, see [testing-guide.md](.claude/docs/testing-guide.md).
+
+### CI Pipeline
+
+GitHub Actions (`.github/workflows/test.yml`) runs three jobs on push/PR to `main`:
+1. **Rust Tests** — `cargo test --lib` (requires system deps: webkit2gtk, libasound2)
+2. **Frontend Tests** — `npm run test:run`
+3. **TypeScript Type Check** — `npx tsc --noEmit`
 
 ## Architecture
 
@@ -126,8 +136,12 @@ The device library and cloud library are independent—sync only updates progres
 
 React Router v7 with BrowserRouter. Routes defined in `App.tsx`: `/` (Home), `/settings`, `/library`.
 
+### Test Infrastructure
+
+Frontend test setup (`src/test/setup.ts`) globally mocks all Tauri APIs (`invoke`, `convertFileSrc`, plugin-dialog, plugin-fs, plugin-shell, plugin-opener) and polyfills `ResizeObserver` for jsdom. Tests don't need to set up these mocks individually.
+
 ## Code Style
 
-- **TypeScript**: camelCase variables, `const` over `let`, top-level functions use `function` keyword, nested functions use arrow syntax. Always use type annotations for function params and return values. Use interfaces for object types.
+- **TypeScript**: camelCase variables, `const` over `let`, top-level functions use `function` keyword, nested functions use arrow syntax. Always use type annotations for function params and return values. Use interfaces for object types. Use type aliases for complex types. Use enums for named constants.
 - **React**: Each component in its own `.tsx` file. Prefer local state unless global state is needed. Use individual Zustand selectors to prevent unnecessary re-renders.
 - **Rust**: Descriptive module names (`database` not `db`). Split files into submodules at ~500 lines. Wildcard re-exports (`pub use module::*`) in `mod.rs` files.
