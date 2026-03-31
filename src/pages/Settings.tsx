@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -8,6 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/components/theme-provider";
 import { invoke } from "@tauri-apps/api/core";
+import useAuthStore from "@/store/auth";
+import LoginDialog from "@/components/LoginDialog";
+import SignupDialog from "@/components/SignupDialog";
 
 type Props = {};
 
@@ -18,6 +22,17 @@ const Settings = ({}: Props) => {
   const [defaultSpeed, setDefaultSpeed] = useState("1.0");
   const [autoRewind, setAutoRewind] = useState(true);
   const [autoRewindAmount, setAutoRewindAmount] = useState(5);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [signupOpen, setSignupOpen] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const logout = useAuthStore((s) => s.logout);
+  const checkAuth = useAuthStore((s) => s.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     invoke("get_settings", {}).then((settings: any) => {
@@ -46,6 +61,7 @@ const Settings = ({}: Props) => {
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="audio">Audio</TabsTrigger>
           <TabsTrigger value="playback">Playback</TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
         <TabsContent value="appearance" className="mt-6 space-y-4">
           <Card className="border-border/50">
@@ -194,7 +210,52 @@ const Settings = ({}: Props) => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="account" className="mt-6 space-y-4">
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-base">Account</CardTitle>
+              <CardDescription>
+                {isAuthenticated
+                  ? "Manage your account"
+                  : "Sign in to enable cross-device sync"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Checking account status...</p>
+              ) : isAuthenticated && user ? (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-sm">Email</Label>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm">Member since</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Separator className="bg-border/50" />
+                  <Button variant="destructive" onClick={logout}>
+                    Log Out
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <Button onClick={() => setSignupOpen(true)}>Sign Up</Button>
+                  <Button variant="outline" onClick={() => setLoginOpen(true)}>
+                    Log In
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+      <SignupDialog open={signupOpen} onOpenChange={setSignupOpen} />
     </div>
   );
 };
