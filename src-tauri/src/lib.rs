@@ -41,9 +41,10 @@ pub fn run() {
                 let pool = app_handle.state::<Arc<SqlitePool>>();
 
                 let player = player.lock().unwrap();
-                if let (Some(track_id), Ok(position)) =
-                    (player.get_current_track_id(), player.get_current_timestamp_f64())
-                {
+                if let (Some(track_id), Ok(position)) = (
+                    player.get_current_track_id(),
+                    player.get_current_timestamp_f64(),
+                ) {
                     let pool = pool.inner().clone();
                     tauri::async_runtime::block_on(async move {
                         let _ = save_progress(&pool, track_id, position, None, None).await;

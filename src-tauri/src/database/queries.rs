@@ -1,5 +1,6 @@
 use crate::models::{Book, Chapter, PlaybackProgress};
 use crate::utils::extract_metadata::Chapter as MetadataChapter;
+use crate::utils::{ConfigEntry, ConfigKey};
 use sqlx::SqlitePool;
 
 pub async fn fetch_book(pool: &SqlitePool, book_id: i32) -> Result<Book, String> {
@@ -45,14 +46,16 @@ pub async fn save_progress(
     Ok(())
 }
 
-pub async fn get_progress(pool: &SqlitePool, book_id: i32) -> Result<Option<PlaybackProgress>, String> {
-    let progress = sqlx::query_as::<_, PlaybackProgress>(
-        "SELECT * FROM playback_progress WHERE book_id = ?",
-    )
-    .bind(book_id)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("Failed to get progress: {}", e))?;
+pub async fn get_progress(
+    pool: &SqlitePool,
+    book_id: i32,
+) -> Result<Option<PlaybackProgress>, String> {
+    let progress =
+        sqlx::query_as::<_, PlaybackProgress>("SELECT * FROM playback_progress WHERE book_id = ?")
+            .bind(book_id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format!("Failed to get progress: {}", e))?;
 
     Ok(progress)
 }
@@ -121,7 +124,9 @@ pub async fn get_chapters_for_book(
     Ok(chapters)
 }
 
-pub async fn get_last_listened_book(pool: &SqlitePool) -> Result<Option<(Book, PlaybackProgress)>, String> {
+pub async fn get_last_listened_book(
+    pool: &SqlitePool,
+) -> Result<Option<(Book, PlaybackProgress)>, String> {
     let progress = sqlx::query_as::<_, PlaybackProgress>(
         "SELECT * FROM playback_progress ORDER BY last_listened_at DESC LIMIT 1",
     )
@@ -136,6 +141,17 @@ pub async fn get_last_listened_book(pool: &SqlitePool) -> Result<Option<(Book, P
         }
         None => Ok(None),
     }
+}
+
+pub async fn get_config(pool: &SqlitePool, key: ConfigKey) -> Result<String, String> {
+    let config =
+        sqlx::query_as::<_, ConfigEntry>("SELECT key, value from system_config where key = ?")
+            .bind(key)
+            .fetch_one(pool)
+            .await
+            .map_err(|e| format!("Failed to get config: {}", e))?;
+
+    Ok(config.value)
 }
 
 #[cfg(test)]
