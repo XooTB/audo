@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use sqlx::Type;
 
 #[derive(Debug, Clone, Copy, Type)]
@@ -5,7 +6,7 @@ pub enum ConfigKey {
     FrontendMode,
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct ConfigEntry {
     pub key: String,
     pub value: String,

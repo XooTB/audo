@@ -1,7 +1,8 @@
 use crate::models::{Book, Chapter, PlaybackProgress};
 use crate::utils::extract_metadata::Chapter as MetadataChapter;
 use crate::utils::{ConfigEntry, ConfigKey};
-use sqlx::SqlitePool;
+use sqlx::{Execute, SqlitePool};
+use tauri::utils::config;
 
 pub async fn fetch_book(pool: &SqlitePool, book_id: i32) -> Result<Book, String> {
     // Fetch the book from the database
@@ -154,6 +155,33 @@ pub async fn get_config(pool: &SqlitePool, key: ConfigKey) -> Result<String, Str
     Ok(config.value)
 }
 
+<<<<<<< HEAD
+=======
+pub async fn save_config(pool: &SqlitePool, key: ConfigKey, value: &str) -> Result<(), String> {
+    sqlx::query(
+        "INSERT INTO system_config (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(key.as_str())
+    .bind(value)
+    .execute(pool)
+    .await
+    .map_err(|e| format!("Failed to save config: {}", e))?;
+
+    Ok(())
+}
+
+pub async fn get_default_config(pool: &SqlitePool) -> Result<Vec<ConfigEntry>, String> {
+    let configs =
+        sqlx::query_as::<_, ConfigEntry>("SELECT key, value from system_config where key in (?)")
+            .bind(ConfigKey::FrontendMode.to_string())
+            .fetch_all(pool)
+            .await
+            .map_err(|e| format!("Failed to get default configs: {}", e))?;
+    Ok(configs)
+}
+
+>>>>>>> 338ae0e (fix: temp commit)
 #[cfg(test)]
 mod tests {
     use super::*;

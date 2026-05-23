@@ -1,6 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useState, useEffect } from "react";
-import { Book } from "@/types/book.d";
+import { useEffect } from "react";
 import BookCard from "@/components/BookCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen } from "lucide-react";
@@ -8,11 +7,12 @@ import { useBooksStore } from "@/store/books";
 
 type Props = {};
 
-const Home = ({}: Props) => {
-  const { books, loading, fetchBooks, removeBook } = useBooksStore();
+const Home = ({ }: Props) => {
+  const { books, loading, fetchBooks } = useBooksStore();
 
   useEffect(() => {
     fetchBooks();
+    invoke("get_default_state")
   }, []);
 
   return (

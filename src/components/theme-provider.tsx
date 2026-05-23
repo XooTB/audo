@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"
+import { invoke } from "@tauri-apps/api/core"
+import { useDatabaseTheme } from "@/hooks/useDatabaseTheme"
 
 type Theme = "dark" | "light" | "system"
 
@@ -26,9 +28,34 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, setTheme] = useState<Theme>("system")
+  const [dbTheme, setDbTheme] = useState<Theme | null>(null)
+  const { theme: dbFetchedTheme, loading } = useDatabaseTheme()
+
+  // Initialize theme from database on mount
+  useEffect(() => {
+    if (dbFetchedTheme !== null && !loading) {
+      setDbTheme(dbFetchedTheme)
+      // Set initial theme to database value if available, otherwise use defaultTheme or localStorage
+      const initialTheme =
+        (dbFetchedTheme as Theme) ||
+        (localStorage.getItem(storageKey) as Theme) ||
+        defaultTheme
+      setTheme(initialTheme)
+    }
+  }, [dbFetchedTheme, loading, storageKey, defaultTheme])
+
+  // Update theme when database theme changes (after initial load)
+  useEffect(() => {
+    if (!loading && dbFetchedTheme !== null && dbTheme !== dbFetchedTheme) {
+      setDbTheme(dbFetchedTheme)
+      // Only update if not overridden by localStorage or manual change
+      const currentLocal = localStorage.getItem(storageKey) as Theme
+      if (!currentLocal) {
+        setTheme(dbFetchedTheme as Theme)
+      }
+    }
+  }, [dbFetchedTheme, loading, dbTheme, storageKey])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -53,6 +80,8 @@ export function ThemeProvider({
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
+      // Also save to database
+      invoke("save_frontend_mode", { mode: theme })
     },
   }
 
