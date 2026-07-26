@@ -155,8 +155,6 @@ pub async fn get_config(pool: &SqlitePool, key: ConfigKey) -> Result<String, Str
     Ok(config.value)
 }
 
-<<<<<<< HEAD
-=======
 pub async fn save_config(pool: &SqlitePool, key: ConfigKey, value: &str) -> Result<(), String> {
     sqlx::query(
         "INSERT INTO system_config (key, value) VALUES (?, ?)
@@ -181,7 +179,6 @@ pub async fn get_default_config(pool: &SqlitePool) -> Result<Vec<ConfigEntry>, S
     Ok(configs)
 }
 
->>>>>>> 338ae0e (fix: temp commit)
 #[cfg(test)]
 mod tests {
     use super::*;
